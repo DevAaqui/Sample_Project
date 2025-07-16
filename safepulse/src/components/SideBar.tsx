@@ -1,0 +1,105 @@
+'use client';
+
+import { 
+  ChartBarIcon, 
+  ShoppingBagIcon, 
+  UserGroupIcon, 
+  ShoppingCartIcon, 
+  EnvelopeIcon,
+  Cog6ToothIcon,
+  DocumentIcon,
+  HeartIcon,
+  FireIcon,
+  ExclamationTriangleIcon,
+  BellIcon
+} from '@heroicons/react/24/outline';
+
+interface NavigationItem {
+  name: string;
+  icon: React.ComponentType<{ className?: string }>;
+  href: string;
+  active?: boolean;
+  hasSubmenu?: boolean;
+}
+
+interface NavigationSection {
+  category: string;
+  items: NavigationItem[];
+}
+
+interface SidebarProps {
+  activeSection?: string;
+}
+
+export default function Sidebar({ activeSection = 'analytics' }: SidebarProps) {
+  const navigationItems: NavigationSection[] = [
+    {
+      category: 'OVERVIEW',
+      items: [
+        { name: 'Dashboard', icon: ChartBarIcon, href: '#' },
+        { name: 'Guests', icon: UserGroupIcon, href: '#' },
+        { name: 'Analytics', icon: ChartBarIcon, href: '#', active: true },
+        { name: 'Rides', icon: ShoppingBagIcon, href: '#' },
+        { name: 'Safety', icon: ExclamationTriangleIcon, href: '#' },
+        { name: 'Reports', icon: DocumentIcon, href: '#' },
+        { name: 'Settings', icon: Cog6ToothIcon, href: '#' },
+      ]
+    },
+    {
+      category: 'MANAGEMENT',
+      items: [
+        { name: 'User Management', icon: UserGroupIcon, href: '#', hasSubmenu: true },
+        { name: 'Ride Management', icon: ShoppingBagIcon, href: '#', hasSubmenu: true },
+        { name: 'Safety Protocols', icon: ExclamationTriangleIcon, href: '#', hasSubmenu: true },
+        { name: 'Health Monitoring', icon: HeartIcon, href: '#', hasSubmenu: true },
+        { name: 'Activity Tracking', icon: FireIcon, href: '#', hasSubmenu: true },
+        { name: 'Alerts & Notifications', icon: BellIcon, href: '#', hasSubmenu: true },
+        { name: 'System Health', icon: Cog6ToothIcon, href: '#', hasSubmenu: true },
+      ]
+    }
+  ];
+
+  return (
+    <div className="w-64 bg-white shadow-lg">
+      <div className="p-6">
+        <div className="flex items-center">
+          <div className="w-8 h-8 bg-green-500 rounded-lg flex items-center justify-center">
+            <span className="text-white font-bold text-sm">S</span>
+          </div>
+          <span className="ml-2 text-xl font-bold text-gray-800">SafePulse</span>
+        </div>
+      </div>
+      
+      <nav className="mt-6">
+        {navigationItems.map((section) => (
+          <div key={section.category} className="mb-6">
+            <h3 className="px-6 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+              {section.category}
+            </h3>
+            <div className="mt-2">
+              {section.items.map((item) => (
+                <a
+                  key={item.name}
+                  href={item.href}
+                  className={`flex items-center px-6 py-3 text-sm font-medium transition-colors ${
+                    'active' in item && item.active
+                      ? 'bg-green-50 text-green-700 border-r-2 border-green-500'
+                      : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                  }`}
+                >
+                  <item.icon className="w-5 h-5 mr-3" />
+                  {item.name}
+                  {'hasSubmenu' in item && item.hasSubmenu && (
+                    <svg className="w-4 h-4 ml-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  )}
+                </a>
+              ))}
+            </div>
+          </div>
+        ))}
+      </nav>
+    </div>
+  );
+}
