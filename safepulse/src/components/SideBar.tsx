@@ -43,8 +43,8 @@ export default function Sidebar({ activeSection = "analytics" }: SidebarProps) {
         { name: "Dashboard", icon: ChartBarIcon, href: "/" },
         { name: "Guests", icon: UserGroupIcon, href: "/guests" },
         { name: "Analytics", icon: ChartBarIcon, href: "/analytics" },
-        { name: "Rides", icon: ShoppingBagIcon, href: "/rides" },
-        { name: "Safety", icon: ExclamationTriangleIcon, href: "/safety" },
+        // { name: "Rides", icon: ShoppingBagIcon, href: "/rides" },
+        // { name: "Safety", icon: ExclamationTriangleIcon, href: "/safety" },
         { name: "Reports", icon: DocumentIcon, href: "/reports" },
         { name: "Settings", icon: Cog6ToothIcon, href: "/settings" },
       ],
@@ -58,40 +58,40 @@ export default function Sidebar({ activeSection = "analytics" }: SidebarProps) {
           href: "#",
           hasSubmenu: true,
         },
-        {
-          name: "Ride Management",
-          icon: ShoppingBagIcon,
-          href: "#",
-          hasSubmenu: true,
-        },
-        {
-          name: "Safety Protocols",
-          icon: ExclamationTriangleIcon,
-          href: "#",
-          hasSubmenu: true,
-        },
+        // {
+        //   name: "Ride Management",
+        //   icon: ShoppingBagIcon,
+        //   href: "#",
+        //   hasSubmenu: true,
+        // },
+        // {
+        //   name: "Safety Protocols",
+        //   icon: ExclamationTriangleIcon,
+        //   href: "#",
+        //   hasSubmenu: true,
+        // },
         {
           name: "Health Monitoring",
           icon: HeartIcon,
-          href: "#",
+          href: "/health-monitoring",
           hasSubmenu: true,
         },
         {
           name: "Activity Tracking",
           icon: FireIcon,
-          href: "#",
+          href: "/activity-tracking",
           hasSubmenu: true,
         },
         {
           name: "Alerts & Notifications",
           icon: BellIcon,
-          href: "#",
+          href: "/alerts-notifications",
           hasSubmenu: true,
         },
         {
           name: "System Health",
           icon: Cog6ToothIcon,
-          href: "#",
+          href: "/system-health",
           hasSubmenu: true,
         },
       ],
@@ -124,11 +124,10 @@ export default function Sidebar({ activeSection = "analytics" }: SidebarProps) {
                   <Link
                     key={item.name}
                     href={item.href}
-                    className={`flex items-center px-6 py-3 text-sm font-medium transition-colors ${
-                      isActive
-                        ? "bg-green-50 text-green-700 border-r-2 border-green-500"
-                        : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-                    }`}
+                    className={`flex items-center px-6 py-3 text-sm font-medium transition-colors ${isActive
+                      ? "bg-green-50 text-green-700 border-r-2 border-green-500"
+                      : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                      }`}
                   >
                     <item.icon className="w-5 h-5 mr-3" />
                     {item.name}
