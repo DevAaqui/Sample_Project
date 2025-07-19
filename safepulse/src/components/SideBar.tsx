@@ -40,9 +40,9 @@ export default function Sidebar({ activeSection = "analytics" }: SidebarProps) {
     {
       category: "OVERVIEW",
       items: [
-        { name: "Dashboard", icon: ChartBarIcon, href: "/" },
+        { name: "Dashboard", icon: ChartBarIcon, href: "/dashboard" },
         { name: "Guests", icon: UserGroupIcon, href: "/guests" },
-        { name: "Analytics", icon: ChartBarIcon, href: "/analytics" },
+        // { name: "Analytics", icon: ChartBarIcon, href: "/analytics" },
         // { name: "Rides", icon: ShoppingBagIcon, href: "/rides" },
         // { name: "Safety", icon: ExclamationTriangleIcon, href: "/safety" },
         { name: "Reports", icon: DocumentIcon, href: "/reports" },
@@ -55,7 +55,7 @@ export default function Sidebar({ activeSection = "analytics" }: SidebarProps) {
         {
           name: "User Management",
           icon: UserGroupIcon,
-          href: "#",
+          href: "/user-management",
           hasSubmenu: true,
         },
         // {
@@ -103,7 +103,7 @@ export default function Sidebar({ activeSection = "analytics" }: SidebarProps) {
       <div className="p-6">
         <div className="flex items-center">
           <div className="w-8 h-8 bg-green-500 rounded-lg flex items-center justify-center">
-            <span className="text-white font-bold text-sm">S</span>
+            <span className="text-white font-bold text-md">S</span>
           </div>
           <span className="ml-2 text-xl font-bold text-gray-800">
             SafePulse
@@ -113,25 +113,26 @@ export default function Sidebar({ activeSection = "analytics" }: SidebarProps) {
 
       <nav className="mt-6">
         {navigationItems.map((section) => (
-          <div key={section.category} className="mb-6">
-            <h3 className="px-6 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+          <div key={section.category} className="mb-0">
+            {/* <h3 className="px-6 text-xs font-semibold text-gray-500 uppercase tracking-wider">
               {section.category}
-            </h3>
-            <div className="mt-2">
+            </h3> */}
+            <div className="mt-0">
               {section.items.map((item) => {
                 const isActive = pathname === item.href;
                 return (
                   <Link
                     key={item.name}
                     href={item.href}
-                    className={`flex items-center px-6 py-3 text-sm font-medium transition-colors ${isActive
-                      ? "bg-green-50 text-green-700 border-r-2 border-green-500"
-                      : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-                      }`}
+                    className={`flex items-center px-6 py-3 text-md font-medium transition-colors ${
+                      isActive
+                        ? "bg-green-50 text-green-700 border-r-2 border-green-500"
+                        : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                    }`}
                   >
                     <item.icon className="w-5 h-5 mr-3" />
                     {item.name}
-                    {"hasSubmenu" in item && item.hasSubmenu && (
+                    {/* {"hasSubmenu" in item && item.hasSubmenu && (
                       <svg
                         className="w-4 h-4 ml-auto"
                         fill="none"
@@ -145,7 +146,7 @@ export default function Sidebar({ activeSection = "analytics" }: SidebarProps) {
                           d="M9 5l7 7-7 7"
                         />
                       </svg>
-                    )}
+                    )} */}
                   </Link>
                 );
               })}
