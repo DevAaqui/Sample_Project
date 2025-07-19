@@ -46,7 +46,7 @@ export default function Sidebar({ activeSection = "analytics" }: SidebarProps) {
         // { name: "Rides", icon: ShoppingBagIcon, href: "/rides" },
         // { name: "Safety", icon: ExclamationTriangleIcon, href: "/safety" },
         { name: "Reports", icon: DocumentIcon, href: "/reports" },
-        { name: "Settings", icon: Cog6ToothIcon, href: "/settings" },
+        // { name: "Settings", icon: Cog6ToothIcon, href: "/settings" },
       ],
     },
     {
