@@ -11,6 +11,7 @@ import {
   FireIcon,
   ExclamationTriangleIcon,
 } from "@heroicons/react/24/outline";
+import { Card, CardBody, CardHeader } from "@heroui/react";
 import * as echarts from "echarts";
 import HealthMetrics from "@/components/HealthMetrics";
 import GuestManagement from "@/components/GuestManagement";
@@ -332,60 +333,69 @@ export default function Dashboard() {
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {kpiCards.map((card, index) => (
-          <div
-            key={card.title}
-            className={`${card.color} rounded-xl p-6 border border-gray-200`}
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">
-                  {card.title}
-                </p>
-                <p className="text-2xl font-bold text-gray-900">{card.value}</p>
-                <div className="flex items-center mt-1">
-                  <span
-                    className={`text-sm font-medium ${
-                      card.trend === "up" ? "text-green-600" : "text-red-600"
-                    }`}
-                  >
-                    {card.change}
-                  </span>
-                  <span className="text-sm text-gray-500 ml-1">
-                    vs last week
-                  </span>
+          <Card key={card.title} className={`${card.color} border-gray-200`}>
+            <CardBody className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">
+                    {card.title}
+                  </p>
+                  <p className="text-2xl font-bold text-gray-900">
+                    {card.value}
+                  </p>
+                  <div className="flex items-center mt-1">
+                    <span
+                      className={`text-sm font-medium ${
+                        card.trend === "up" ? "text-green-600" : "text-red-600"
+                      }`}
+                    >
+                      {card.change}
+                    </span>
+                    <span className="text-sm text-gray-500 ml-1">
+                      vs last week
+                    </span>
+                  </div>
+                </div>
+                <div className={`${card.iconColor} p-3 rounded-lg bg-white`}>
+                  <card.icon className="h-6 w-6" />
                 </div>
               </div>
-              <div className={`${card.iconColor} p-3 rounded-lg bg-white`}>
-                <card.icon className="h-6 w-6" />
-              </div>
-            </div>
-            <div
-              ref={(el) => {
-                miniChartRefs.current[index] = el;
-              }}
-              className="h-16 mt-4"
-            />
-          </div>
+              <div
+                ref={(el) => {
+                  miniChartRefs.current[index] = el;
+                }}
+                className="h-16 mt-4"
+              />
+            </CardBody>
+          </Card>
         ))}
       </div>
 
       {/* Charts Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Pie Chart */}
-        <div className="bg-white rounded-xl p-6 border border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">
-            Guest Health Status Distribution
-          </h3>
-          <div ref={pieChartRef} className="h-64" />
-        </div>
+        <Card className="border-gray-200">
+          <CardHeader className="pb-0">
+            <h3 className="text-lg font-semibold text-gray-900">
+              Guest Health Status Distribution
+            </h3>
+          </CardHeader>
+          <CardBody>
+            <div ref={pieChartRef} className="h-64" />
+          </CardBody>
+        </Card>
 
         {/* Bar Chart */}
-        <div className="bg-white rounded-xl p-6 border border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">
-            Monthly Ride Safety Metrics
-          </h3>
-          <div ref={barChartRef} className="h-64" />
-        </div>
+        <Card className="border-gray-200">
+          <CardHeader className="pb-0">
+            <h3 className="text-lg font-semibold text-gray-900">
+              Monthly Ride Safety Metrics
+            </h3>
+          </CardHeader>
+          <CardBody>
+            <div ref={barChartRef} className="h-64" />
+          </CardBody>
+        </Card>
       </div>
 
       {/* Additional Components */}
