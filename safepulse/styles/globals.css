@@ -1,0 +1,24 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+
+.stacked-progress-bars {
+    display: flex;
+    height: 1.5em;
+    background-color: #f3f3f3;
+    border-radius: 2px;
+    /* margin: 0.4em; */
+    min-width: 100px;
+    overflow: hidden;
+}
+
+.progress-bar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    font-size: 14px;
+    color: white;
+    text-align: center;
+}
