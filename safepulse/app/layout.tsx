@@ -38,7 +38,7 @@ export default function RootLayout({
               </div>
             </ProtectedRoute>
           </AuthProvider>
-        </Providers>{" "}
+        </Providers>
       </body>
     </html>
   );

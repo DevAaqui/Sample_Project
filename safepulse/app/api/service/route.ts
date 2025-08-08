@@ -1,54 +1,252 @@
-import { NextRequest, NextResponse } from 'next/server';
-import axios from 'axios';
-import { deserialize } from '../../../utils/serialization';
+import { NextRequest, NextResponse } from "next/server";
+
+export async function GET(req: NextRequest) {
+  try {
+    const apiPath =
+      process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+    if (!apiPath) {
+      return NextResponse.json(
+        { error: "No valid API path configured" },
+        { status: 500 }
+      );
+    }
+
+    // Get the endpoint from query parameters
+    const { searchParams } = new URL(req.url);
+    const endpoint = searchParams.get("endpoint");
+
+    if (!endpoint) {
+      return NextResponse.json(
+        { error: "Endpoint parameter is required" },
+        { status: 400 }
+      );
+    }
+
+    const token = req.headers.get("authorization");
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+    };
+
+    if (token) {
+      headers["Authorization"] = token;
+    }
+
+    console.log("Service GET request:", `${apiPath}${endpoint}`);
+
+    const response = await fetch(`${apiPath}${endpoint}`, {
+      method: "GET",
+      headers,
+    });
+
+    if (!response.ok) {
+      const errorData = await response
+        .json()
+        .catch(() => ({ message: "Request failed" }));
+      return NextResponse.json(
+        { error: errorData.message || "Request failed" },
+        { status: response.status }
+      );
+    }
+
+    const data = await response.json();
+    console.log("Service GET response:", data);
+    return NextResponse.json(data);
+  } catch (error) {
+    console.error("Error in service GET:", error);
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 }
+    );
+  }
+}
 
 export async function POST(req: NextRequest) {
   try {
-    const apiPath = process.env.QUAD_CONFIG_API_PATH;
+    const apiPath =
+      process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
     if (!apiPath) {
       return NextResponse.json(
-        { error: 'No valid API path configured' },
+        { error: "No valid API path configured" },
         { status: 500 }
       );
     }
 
     const body = await req.json();
-    console.log('Request body:', body);
-    const payload = deserialize(body.payload);
-    console.log('Payload:', payload);
+    console.log("Service request body:", body);
 
-    const url = `${apiPath}${payload.path}`;
+    // Get endpoint from request body or determine based on content
+    let endpoint = body.endpoint;
 
-    let response;
-    switch (payload.method) {
-      case 'PATCH':
-        response = await axios.patch(url, payload.body);
-        break;
-
-      case 'DELETE':
-        response = await axios.delete(url);
-        break;
-
-      case 'GET':
-        response = await axios.get(url, { params: payload.params });
-        break;
-
-      case 'POST':
-      default:
-        response = await axios.post(url, payload.body);
-        break;
+    // If no endpoint specified, try to determine from content (for backward compatibility)
+    if (!endpoint) {
+      if (body.username && body.firstName && body.lastName) {
+        endpoint = "/auth/register";
+      } else if (body.email && body.password && !body.username) {
+        endpoint = "/auth/login";
+      } else {
+        return NextResponse.json(
+          { error: "Endpoint is required in request body" },
+          { status: 400 }
+        );
+      }
     }
 
-    return NextResponse.json(response.data, { status: response.status });
+    console.log("Service POST request:", `${apiPath}${endpoint}`);
+
+    const token = req.headers.get("authorization");
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+    };
+
+    if (token) {
+      headers["Authorization"] = token;
+    }
+
+    const response = await fetch(`${apiPath}${endpoint}`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify(body.payload || body),
+    });
+
+    if (!response.ok) {
+      const errorData = await response
+        .json()
+        .catch(() => ({ message: "Request failed" }));
+      return NextResponse.json(
+        { error: errorData.message || "Request failed" },
+        { status: response.status }
+      );
+    }
+
+    const data = await response.json();
+    console.log("Service POST response:", data);
+    return NextResponse.json(data);
   } catch (error) {
-    console.error('Error handling request:', error);
-    if (axios.isAxiosError(error) && error.response) {
-      return NextResponse.json(error.response.data, {
-        status: error.response.status,
-      });
-    }
+    console.error("Error in service POST:", error);
     return NextResponse.json(
-      { message: 'Internal server error' },
+      { error: "Internal Server Error" },
+      { status: 500 }
+    );
+  }
+}
+
+export async function PUT(req: NextRequest) {
+  try {
+    const apiPath =
+      process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+    if (!apiPath) {
+      return NextResponse.json(
+        { error: "No valid API path configured" },
+        { status: 500 }
+      );
+    }
+
+    const body = await req.json();
+    console.log("Service PUT request body:", body);
+
+    // Get endpoint from request body
+    const endpoint = body.endpoint;
+    if (!endpoint) {
+      return NextResponse.json(
+        { error: "Endpoint is required in request body" },
+        { status: 400 }
+      );
+    }
+
+    const token = req.headers.get("authorization");
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+    };
+
+    if (token) {
+      headers["Authorization"] = token;
+    }
+
+    console.log("Service PUT request:", `${apiPath}${endpoint}`);
+
+    const response = await fetch(`${apiPath}${endpoint}`, {
+      method: "PUT",
+      headers,
+      body: JSON.stringify(body.payload || body),
+    });
+
+    if (!response.ok) {
+      const errorData = await response
+        .json()
+        .catch(() => ({ message: "Request failed" }));
+      return NextResponse.json(
+        { error: errorData.message || "Request failed" },
+        { status: response.status }
+      );
+    }
+
+    const data = await response.json();
+    console.log("Service PUT response:", data);
+    return NextResponse.json(data);
+  } catch (error) {
+    console.error("Error in service PUT:", error);
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 }
+    );
+  }
+}
+
+export async function DELETE(req: NextRequest) {
+  try {
+    const apiPath =
+      process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+    if (!apiPath) {
+      return NextResponse.json(
+        { error: "No valid API path configured" },
+        { status: 500 }
+      );
+    }
+
+    // Get the endpoint from query parameters
+    const { searchParams } = new URL(req.url);
+    const endpoint = searchParams.get("endpoint");
+
+    if (!endpoint) {
+      return NextResponse.json(
+        { error: "Endpoint parameter is required" },
+        { status: 400 }
+      );
+    }
+
+    const token = req.headers.get("authorization");
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+    };
+
+    if (token) {
+      headers["Authorization"] = token;
+    }
+
+    console.log("Service DELETE request:", `${apiPath}${endpoint}`);
+
+    const response = await fetch(`${apiPath}${endpoint}`, {
+      method: "DELETE",
+      headers,
+    });
+
+    if (!response.ok) {
+      const errorData = await response
+        .json()
+        .catch(() => ({ message: "Request failed" }));
+      return NextResponse.json(
+        { error: errorData.message || "Request failed" },
+        { status: response.status }
+      );
+    }
+
+    const data = await response.json();
+    console.log("Service DELETE response:", data);
+    return NextResponse.json(data);
+  } catch (error) {
+    console.error("Error in service DELETE:", error);
+    return NextResponse.json(
+      { error: "Internal Server Error" },
       { status: 500 }
     );
   }

@@ -8,7 +8,6 @@ import {
   ReactNode,
 } from "react";
 import { useRouter } from "next/navigation";
-import api from "@/utils/api";
 
 interface User {
   id: number;
@@ -57,16 +56,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = async (email: string, password: string): Promise<boolean> => {
     try {
-      const response = await api.login(email, password);
-      if (response.success && response.data) {
-        const { token, user } = response.data as { token: string; user: User };
-        setToken(token);
-        setUser(user);
-        localStorage.setItem("token", token);
-        localStorage.setItem("user", JSON.stringify(user));
+      const response = await fetch("/api/service", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          endpoint: "/auth/login",
+          payload: { email, password }
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.token && data.user) {
+        setToken(data.token);
+        setUser(data.user);
+        localStorage.setItem("token", data.token);
+        localStorage.setItem("user", JSON.stringify(data.user));
         return true;
       } else {
-        throw new Error(response.error || "Login failed");
+        throw new Error(data.error || "Login failed");
       }
     } catch (error) {
       console.error("Login error:", error);
