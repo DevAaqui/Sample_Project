@@ -6,6 +6,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import Header from "@/components/Header";
 import Sidebar from "@/components/SideBar";
+import { ReduxProvider } from "@/redux/ReduxProvider";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -26,19 +27,23 @@ export default function RootLayout({
     <html lang="en" className="h-full light">
       <head />
       <body className={`${inter.className} h-full `}>
-        <Providers>
-          <AuthProvider>
-            <ProtectedRoute>
-              <div className="flex h-screen bg-gray-50">
-                <Sidebar />
-                <div className="flex-1 flex flex-col overflow-hidden">
-                  <Header />
-                  <main className="flex-1 overflow-y-auto p-6">{children}</main>
+        <ReduxProvider>
+          <Providers>
+            <AuthProvider>
+              <ProtectedRoute>
+                <div className="flex h-screen bg-gray-50">
+                  <Sidebar />
+                  <div className="flex-1 flex flex-col overflow-hidden">
+                    <Header />
+                    <main className="flex-1 overflow-y-auto p-6">
+                      {children}
+                    </main>
+                  </div>
                 </div>
-              </div>
-            </ProtectedRoute>
-          </AuthProvider>
-        </Providers>
+              </ProtectedRoute>
+            </AuthProvider>
+          </Providers>
+        </ReduxProvider>
       </body>
     </html>
   );

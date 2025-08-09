@@ -17,6 +17,7 @@ const calculateAge = (dob) => {
 
 // Helper function to calculate health score based on various metrics
 const calculateHealthScore = (guest, latestMetrics) => {
+  // Will update later, the Heart Rate, Blood Pressure, Activity Level, Calorie Burn, Age and Gender Baseline to be the safe_hr_min and safe_hr_max from the guest object
   let score = 0;
   let factors = 0;
 

@@ -1,7 +1,7 @@
 // safepulse/app/(main)/guests/component/GuestClient.tsx
 "use client";
 
-import { useState, useMemo, useEffect, useTransition } from "react";
+import { useState, useMemo, useEffect } from "react";
 import {
   UserGroupIcon,
   MagnifyingGlassIcon,
@@ -21,51 +21,44 @@ import {
 } from "@tanstack/react-table";
 import { Guest } from "@/app/utils/GuestAPI/guestInterface";
 import { columns } from "./commonGuestFunc";
-import { getGuestsData } from "@/app/utils/GuestAPI/GuestFetch";
-// import { fetchGuestsAction } from "../actions";
-
-interface PaginationInfo {
-  currentPage: number;
-  totalPages: number;
-  totalCount: number;
-  limit: number;
-  hasNextPage: boolean;
-  hasPrevPage: boolean;
-  nextPage: number | null;
-  prevPage: number | null;
-}
+import {
+  fetchGuests,
+  setSearchTerm,
+  setCurrentPage,
+  selectFilteredGuests,
+  selectPagination,
+  selectLoading,
+  selectError,
+  selectCurrentPage,
+  selectSearchTerm,
+  selectGuestStats,
+} from "@/redux/slices/guestSlice";
+import { useAppDispatch, useAppSelector } from "@/redux/reduxHooks/reduxHook";
 
 interface GuestClientProps {
   initialGuests: Guest[];
-  initialPagination: PaginationInfo;
+  initialPagination: any;
 }
 
 export default function GuestsPage({
   initialGuests,
   initialPagination,
 }: GuestClientProps) {
-  const [searchTerm, setSearchTerm] = useState("");
+  const dispatch = useAppDispatch();
   const [sorting, setSorting] = useState<SortingState>([]);
-  const [isPending, startTransition] = useTransition();
 
-  // State for guests and pagination
-  const [guests, setGuests] = useState<Guest[]>(initialGuests);
-  const [paginationData, setPaginationData] =
-    useState<PaginationInfo>(initialPagination);
-  const [currentPage, setCurrentPage] = useState(1);
-
-  // Filter data with correct field name
-  const filteredData = useMemo(() => {
-    return guests.filter(
-      (guest) =>
-        guest.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        guest.email.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-  }, [guests, searchTerm]);
+  // Redux selectors
+  const guests = useAppSelector(selectFilteredGuests);
+  const pagination = useAppSelector(selectPagination);
+  const loading = useAppSelector(selectLoading);
+  const error = useAppSelector(selectError);
+  const currentPage = useAppSelector(selectCurrentPage);
+  const searchTerm = useAppSelector(selectSearchTerm);
+  const stats = useAppSelector(selectGuestStats);
 
   // Create table instance
   const table = useReactTable({
-    data: filteredData,
+    data: guests,
     columns,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
@@ -76,46 +69,30 @@ export default function GuestsPage({
     },
   });
 
-  // Calculate stats from real data
-  const stats = useMemo(() => {
-    const totalGuests = paginationData.totalCount;
-    const healthyGuests = guests.filter((g) => g.healthScore >= 80).length;
-    const needsAttention = guests.filter(
-      (g) => g.healthScore < 80 && g.healthScore >= 60
-    ).length;
-    const avgHealthScore =
-      guests.length > 0
-        ? Math.round(
-            guests.reduce((sum, g) => sum + g.healthScore, 0) / guests.length
-          )
-        : 0;
-
-    return {
-      total: totalGuests,
-      healthy: healthyGuests,
-      needsAttention: needsAttention,
-      avgHealthScore: avgHealthScore,
-    };
-  }, [guests, paginationData]);
-
-  // Handle page change with Server Action
-  const handlePageChange = (page: number) => {
-    startTransition(async () => {
-      try {
-        const result = await getGuestsData(page);
-        setGuests(result.guests);
-        setPaginationData(result.pagination);
-        setCurrentPage(page);
-      } catch (error) {
-        console.error("Error changing page:", error);
-      }
-    });
+  // Handle search
+  const handleSearchChange = (value: string) => {
+    dispatch(setSearchTerm(value));
   };
 
-  // Reset search when search term changes
+  // Handle page change
+  const handlePageChange = (page: number) => {
+    dispatch(setCurrentPage(page));
+    dispatch(fetchGuests(page));
+  };
+
+  // Initialize with server-side data
   useEffect(() => {
-    setCurrentPage(1);
-  }, [searchTerm]);
+    if (initialGuests.length > 0) {
+      // Dispatch an action to set initial data
+      dispatch({
+        type: "guest/fetchGuests/fulfilled",
+        payload: {
+          guests: initialGuests,
+          pagination: initialPagination,
+        },
+      });
+    }
+  }, [dispatch, initialGuests, initialPagination]);
 
   return (
     <div className="space-y-6">
@@ -127,13 +104,20 @@ export default function GuestsPage({
         </p>
       </div>
 
+      {/* Error Display */}
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <p className="text-red-800">{error}</p>
+        </div>
+      )}
+
       {/* Search and Filter Bar */}
       <div className="bg-white rounded-xl p-6">
         <Input
           type="text"
           placeholder="Search guests by name or email..."
           value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
+          onChange={(e) => handleSearchChange(e.target.value)}
           variant="bordered"
           size="lg"
           className="w-full"
@@ -155,7 +139,7 @@ export default function GuestsPage({
                   Total Guests
                 </p>
                 <p className="text-2xl font-bold text-gray-900">
-                  {guests.length}
+                  {stats.total}
                 </p>
               </div>
             </div>
@@ -250,7 +234,7 @@ export default function GuestsPage({
               ))}
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {isPending ? (
+              {loading ? (
                 <tr>
                   <td
                     colSpan={6}
@@ -290,19 +274,18 @@ export default function GuestsPage({
         </div>
 
         {/* Pagination */}
-        {paginationData && (
+        {pagination && (
           <div className="px-6 py-4 border-t border-gray-200">
             <div className="flex items-center justify-between">
               <div className="flex items-center text-sm text-gray-700">
                 <span>
-                  Showing{" "}
-                  {(paginationData.currentPage - 1) * paginationData.limit + 1}{" "}
+                  Showing {(pagination.currentPage - 1) * pagination.limit + 1}{" "}
                   to{" "}
                   {Math.min(
-                    paginationData.currentPage * paginationData.limit,
-                    paginationData.totalCount
+                    pagination.currentPage * pagination.limit,
+                    pagination.totalCount
                   )}{" "}
-                  of {paginationData.totalCount} results
+                  of {pagination.totalCount} results
                 </span>
               </div>
 
@@ -310,10 +293,8 @@ export default function GuestsPage({
                 <Button
                   size="sm"
                   variant="bordered"
-                  isDisabled={!paginationData.hasPrevPage || isPending}
-                  onClick={() =>
-                    handlePageChange(paginationData.currentPage - 1)
-                  }
+                  isDisabled={!pagination.hasPrevPage || loading}
+                  onClick={() => handlePageChange(pagination.currentPage - 1)}
                   startContent={<ChevronLeftIcon className="w-4 h-4" />}
                 >
                   Previous
@@ -321,7 +302,7 @@ export default function GuestsPage({
 
                 <div className="flex items-center space-x-1">
                   {Array.from(
-                    { length: Math.min(5, paginationData.totalPages) },
+                    { length: Math.min(5, pagination.totalPages) },
                     (_, i) => {
                       const pageNum = i + 1;
                       return (
@@ -329,13 +310,13 @@ export default function GuestsPage({
                           key={pageNum}
                           size="sm"
                           variant={
-                            pageNum === paginationData.currentPage
+                            pageNum === pagination.currentPage
                               ? "solid"
                               : "bordered"
                           }
                           onClick={() => handlePageChange(pageNum)}
                           className="min-w-[40px]"
-                          isDisabled={isPending}
+                          isDisabled={loading}
                         >
                           {pageNum}
                         </Button>
@@ -343,40 +324,38 @@ export default function GuestsPage({
                     }
                   )}
 
-                  {paginationData.totalPages > 5 && (
+                  {pagination.totalPages > 5 && (
                     <>
-                      {paginationData.currentPage > 3 && (
+                      {pagination.currentPage > 3 && (
                         <span className="px-2 text-gray-500">...</span>
                       )}
-                      {paginationData.currentPage > 3 && (
+                      {pagination.currentPage > 3 && (
                         <Button
                           size="sm"
                           variant="bordered"
                           onClick={() =>
-                            handlePageChange(paginationData.currentPage)
+                            handlePageChange(pagination.currentPage)
                           }
                           className="min-w-[40px]"
-                          isDisabled={isPending}
+                          isDisabled={loading}
                         >
-                          {paginationData.currentPage}
+                          {pagination.currentPage}
                         </Button>
                       )}
-                      {paginationData.currentPage <
-                        paginationData.totalPages - 2 && (
+                      {pagination.currentPage < pagination.totalPages - 2 && (
                         <span className="px-2 text-gray-500">...</span>
                       )}
-                      {paginationData.currentPage <
-                        paginationData.totalPages - 2 && (
+                      {pagination.currentPage < pagination.totalPages - 2 && (
                         <Button
                           size="sm"
                           variant="bordered"
                           onClick={() =>
-                            handlePageChange(paginationData.totalPages)
+                            handlePageChange(pagination.totalPages)
                           }
                           className="min-w-[40px]"
-                          isDisabled={isPending}
+                          isDisabled={loading}
                         >
-                          {paginationData.totalPages}
+                          {pagination.totalPages}
                         </Button>
                       )}
                     </>
@@ -386,10 +365,8 @@ export default function GuestsPage({
                 <Button
                   size="sm"
                   variant="bordered"
-                  isDisabled={!paginationData.hasNextPage || isPending}
-                  onClick={() =>
-                    handlePageChange(paginationData.currentPage + 1)
-                  }
+                  isDisabled={!pagination.hasNextPage || loading}
+                  onClick={() => handlePageChange(pagination.currentPage + 1)}
                   endContent={<ChevronRightIcon className="w-4 h-4" />}
                 >
                   Next
