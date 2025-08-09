@@ -1,39 +1,16 @@
-import { Guest } from "./guestInterface";
-
-// export async function getGuestsData(): Promise<Guest[]> {
-//   try {
-//     const apiUrl =
-//       process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
-
-//     const response = await fetch(`${apiUrl}/guests/metrics/latest`, {
-//       method: "GET",
-//       headers: {
-//         "Content-Type": "application/json",
-//       },
-//       // Add cache control for better performance
-//       next: { revalidate: 30 }, // Revalidate every 30 seconds
-//     });
-
-//     if (!response.ok) {
-//       throw new Error(`HTTP error! status: ${response.status}`);
-//     }
-
-//     const data = await response.json();
-//     return data.guests || [];
-//   } catch (error) {
-//     console.error("Error fetching guests data:", error);
-//     return []; // Return empty array on error
-//   }
-// }
 // safepulse/app/utils/GuestAPI/GuestFetch.ts
-export async function getGuestsData(): Promise<Guest[]> {
+import { Guest, PaginationInfo } from "./guestInterface";
+
+export async function getGuestsData(page: number = 1): Promise<{
+  guests: Guest[];
+  pagination: PaginationInfo;
+}> {
   try {
-    // Prepare the request parameters
+    // Prepare the request parameters - fetch 100 guests per request
     const endpoint = "/guests/metrics/latest";
     const params = {
-      // Add any query parameters you need
-      limit: "10",
-      // Add more params as needed
+      page: page.toString(),
+      limit: "50", // Fetch 100 guests per backend request
     };
 
     // Prepare custom headers if needed
@@ -54,7 +31,7 @@ export async function getGuestsData(): Promise<Guest[]> {
         // Add authorization header if needed
         // "Authorization": `Bearer ${token}`,
       },
-      next: { revalidate: 30 },
+      // next: { revalidate: 30 },
     });
 
     if (!response.ok) {
@@ -62,9 +39,33 @@ export async function getGuestsData(): Promise<Guest[]> {
     }
 
     const data = await response.json();
-    return data.guests || [];
+    return {
+      guests: data.guests || [],
+      pagination: data.pagination || {
+        currentPage: 1,
+        totalPages: 1,
+        totalCount: 0,
+        limit: 100,
+        hasNextPage: false,
+        hasPrevPage: false,
+        nextPage: null,
+        prevPage: null,
+      },
+    };
   } catch (error) {
     console.error("Error fetching guests data:", error);
-    return []; // Return empty array on error
+    return {
+      guests: [],
+      pagination: {
+        currentPage: 1,
+        totalPages: 1,
+        totalCount: 0,
+        limit: 100,
+        hasNextPage: false,
+        hasPrevPage: false,
+        nextPage: null,
+        prevPage: null,
+      },
+    };
   }
 }

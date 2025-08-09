@@ -14,12 +14,28 @@ export async function GET(req: NextRequest) {
     // Get the endpoint from query parameters
     const { searchParams } = new URL(req.url);
     const endpoint = searchParams.get("endpoint");
+    const params = searchParams.get("params");
 
     if (!endpoint) {
       return NextResponse.json(
         { error: "Endpoint parameter is required" },
         { status: 400 }
       );
+    }
+
+    // Parse params if provided
+    let queryParams = "";
+    if (params) {
+      try {
+        const parsedParams = JSON.parse(params);
+        queryParams = new URLSearchParams(parsedParams).toString();
+      } catch (error) {
+        console.error("Error parsing params:", error);
+        return NextResponse.json(
+          { error: "Invalid params format" },
+          { status: 400 }
+        );
+      }
     }
 
     const token = req.headers.get("authorization");
@@ -31,9 +47,14 @@ export async function GET(req: NextRequest) {
       headers["Authorization"] = token;
     }
 
-    console.log("Service GET request:", `${apiPath}${endpoint}`);
+    // Construct the full URL with query parameters
+    const fullUrl = queryParams
+      ? `${apiPath}${endpoint}?${queryParams}`
+      : `${apiPath}${endpoint}`;
 
-    const response = await fetch(`${apiPath}${endpoint}`, {
+    console.log("Service GET request:", fullUrl);
+
+    const response = await fetch(fullUrl, {
       method: "GET",
       headers,
     });
@@ -49,7 +70,6 @@ export async function GET(req: NextRequest) {
     }
 
     const data = await response.json();
-    console.log("Service GET response:", data);
     return NextResponse.json(data);
   } catch (error) {
     console.error("Error in service GET:", error);

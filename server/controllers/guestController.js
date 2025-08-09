@@ -302,6 +302,17 @@ const addGuestMetric = async (req, res) => {
 // Get latest guests with comprehensive data
 const getLatestGuestsMetrics = async (req, res) => {
   try {
+    // Get pagination parameters from query
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 100;
+    const offset = (page - 1) * limit;
+    console.log("query>>>>>", req.query);
+    console.log("limit>>>>>", limit);
+    console.log("offset>>>>>", offset);
+
+    // Get total count for pagination
+    const totalCount = await Guest.count();
+
     // Get all guests with their latest metrics and ride sessions
     const guests = await Guest.findAll({
       include: [
@@ -341,7 +352,8 @@ const getLatestGuestsMetrics = async (req, res) => {
         },
       ],
       order: [["createdAt", "DESC"]],
-      limit: 30,
+      limit: limit,
+      offset: offset,
     });
 
     // Process each guest to calculate required data
@@ -379,7 +391,7 @@ const getLatestGuestsMetrics = async (req, res) => {
         fullName: `${guest.first_name} ${guest.last_name}`,
         age: age,
         healthScore: healthScore,
-        lastRide: lastRide,
+        lastRide: lastRide, 
         totalTimeSpent: formatTimeDuration(totalTimeSpent),
         email: guest.email,
         gender: guest.gender,
@@ -391,12 +403,26 @@ const getLatestGuestsMetrics = async (req, res) => {
         safeHeartRateRange: `${guest.safe_hr_min || 60}-${
           guest.safe_hr_max || 100
         }`,
-      };
+      }; 
     });
+
+    // Calculate pagination info
+    const totalPages = Math.ceil(totalCount / limit);
+    const hasNextPage = page < totalPages;
+    const hasPrevPage = page > 1;
 
     res.json({
       guests: processedGuests,
-      total: processedGuests.length,
+      pagination: {
+        currentPage: page,
+        totalPages: totalPages,
+        totalCount: totalCount,
+        limit: limit,
+        hasNextPage: hasNextPage,
+        hasPrevPage: hasPrevPage,
+        nextPage: hasNextPage ? page + 1 : null,
+        prevPage: hasPrevPage ? page - 1 : null,
+      },
       message: "Latest guests data retrieved successfully",
     });
   } catch (error) {

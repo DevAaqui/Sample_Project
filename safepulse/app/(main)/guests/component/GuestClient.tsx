@@ -1,12 +1,15 @@
+// safepulse/app/(main)/guests/component/GuestClient.tsx
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useTransition } from "react";
 import {
   UserGroupIcon,
   MagnifyingGlassIcon,
   FunnelIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
 } from "@heroicons/react/24/outline";
-import { Card, CardBody, Input } from "@heroui/react";
+import { Card, CardBody, Input, Button } from "@heroui/react";
 import {
   useReactTable,
   getCoreRowModel,
@@ -18,14 +21,38 @@ import {
 } from "@tanstack/react-table";
 import { Guest } from "@/app/utils/GuestAPI/guestInterface";
 import { columns } from "./commonGuestFunc";
+import { getGuestsData } from "@/app/utils/GuestAPI/GuestFetch";
+// import { fetchGuestsAction } from "../actions";
 
+interface PaginationInfo {
+  currentPage: number;
+  totalPages: number;
+  totalCount: number;
+  limit: number;
+  hasNextPage: boolean;
+  hasPrevPage: boolean;
+  nextPage: number | null;
+  prevPage: number | null;
+}
 
-export default function GuestsPage({ guestsData }: { guestsData: Guest[] }) {
+interface GuestClientProps {
+  initialGuests: Guest[];
+  initialPagination: PaginationInfo;
+}
+
+export default function GuestsPage({
+  initialGuests,
+  initialPagination,
+}: GuestClientProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [sorting, setSorting] = useState<SortingState>([]);
+  const [isPending, startTransition] = useTransition();
 
-  // Use the actual data from props instead of hardcoded data
-  const guests: Guest[] = guestsData || [];
+  // State for guests and pagination
+  const [guests, setGuests] = useState<Guest[]>(initialGuests);
+  const [paginationData, setPaginationData] =
+    useState<PaginationInfo>(initialPagination);
+  const [currentPage, setCurrentPage] = useState(1);
 
   // Filter data with correct field name
   const filteredData = useMemo(() => {
@@ -51,7 +78,7 @@ export default function GuestsPage({ guestsData }: { guestsData: Guest[] }) {
 
   // Calculate stats from real data
   const stats = useMemo(() => {
-    const totalGuests = guests.length;
+    const totalGuests = paginationData.totalCount;
     const healthyGuests = guests.filter((g) => g.healthScore >= 80).length;
     const needsAttention = guests.filter(
       (g) => g.healthScore < 80 && g.healthScore >= 60
@@ -69,7 +96,26 @@ export default function GuestsPage({ guestsData }: { guestsData: Guest[] }) {
       needsAttention: needsAttention,
       avgHealthScore: avgHealthScore,
     };
-  }, [guests]);
+  }, [guests, paginationData]);
+
+  // Handle page change with Server Action
+  const handlePageChange = (page: number) => {
+    startTransition(async () => {
+      try {
+        const result = await getGuestsData(page);
+        setGuests(result.guests);
+        setPaginationData(result.pagination);
+        setCurrentPage(page);
+      } catch (error) {
+        console.error("Error changing page:", error);
+      }
+    });
+  };
+
+  // Reset search when search term changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm]);
 
   return (
     <div className="space-y-6">
@@ -204,21 +250,154 @@ export default function GuestsPage({ guestsData }: { guestsData: Guest[] }) {
               ))}
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {table.getRowModel().rows.map((row) => (
-                <tr key={row.id} className="hover:bg-gray-50">
-                  {row.getVisibleCells().map((cell) => (
-                    <td key={cell.id} className="px-6 py-4 whitespace-nowrap">
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext()
-                      )}
-                    </td>
-                  ))}
+              {isPending ? (
+                <tr>
+                  <td
+                    colSpan={6}
+                    className="px-6 py-4 text-center text-gray-500"
+                  >
+                    <div className="flex items-center justify-center">
+                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+                      <span className="ml-2">Loading guests...</span>
+                    </div>
+                  </td>
                 </tr>
-              ))}
+              ) : table.getRowModel().rows.length === 0 ? (
+                <tr>
+                  <td
+                    colSpan={6}
+                    className="px-6 py-4 text-center text-gray-500"
+                  >
+                    No guests found
+                  </td>
+                </tr>
+              ) : (
+                table.getRowModel().rows.map((row) => (
+                  <tr key={row.id} className="hover:bg-gray-50">
+                    {row.getVisibleCells().map((cell) => (
+                      <td key={cell.id} className="px-6 py-4 whitespace-nowrap">
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext()
+                        )}
+                      </td>
+                    ))}
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
+
+        {/* Pagination */}
+        {paginationData && (
+          <div className="px-6 py-4 border-t border-gray-200">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center text-sm text-gray-700">
+                <span>
+                  Showing{" "}
+                  {(paginationData.currentPage - 1) * paginationData.limit + 1}{" "}
+                  to{" "}
+                  {Math.min(
+                    paginationData.currentPage * paginationData.limit,
+                    paginationData.totalCount
+                  )}{" "}
+                  of {paginationData.totalCount} results
+                </span>
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <Button
+                  size="sm"
+                  variant="bordered"
+                  isDisabled={!paginationData.hasPrevPage || isPending}
+                  onClick={() =>
+                    handlePageChange(paginationData.currentPage - 1)
+                  }
+                  startContent={<ChevronLeftIcon className="w-4 h-4" />}
+                >
+                  Previous
+                </Button>
+
+                <div className="flex items-center space-x-1">
+                  {Array.from(
+                    { length: Math.min(5, paginationData.totalPages) },
+                    (_, i) => {
+                      const pageNum = i + 1;
+                      return (
+                        <Button
+                          key={pageNum}
+                          size="sm"
+                          variant={
+                            pageNum === paginationData.currentPage
+                              ? "solid"
+                              : "bordered"
+                          }
+                          onClick={() => handlePageChange(pageNum)}
+                          className="min-w-[40px]"
+                          isDisabled={isPending}
+                        >
+                          {pageNum}
+                        </Button>
+                      );
+                    }
+                  )}
+
+                  {paginationData.totalPages > 5 && (
+                    <>
+                      {paginationData.currentPage > 3 && (
+                        <span className="px-2 text-gray-500">...</span>
+                      )}
+                      {paginationData.currentPage > 3 && (
+                        <Button
+                          size="sm"
+                          variant="bordered"
+                          onClick={() =>
+                            handlePageChange(paginationData.currentPage)
+                          }
+                          className="min-w-[40px]"
+                          isDisabled={isPending}
+                        >
+                          {paginationData.currentPage}
+                        </Button>
+                      )}
+                      {paginationData.currentPage <
+                        paginationData.totalPages - 2 && (
+                        <span className="px-2 text-gray-500">...</span>
+                      )}
+                      {paginationData.currentPage <
+                        paginationData.totalPages - 2 && (
+                        <Button
+                          size="sm"
+                          variant="bordered"
+                          onClick={() =>
+                            handlePageChange(paginationData.totalPages)
+                          }
+                          className="min-w-[40px]"
+                          isDisabled={isPending}
+                        >
+                          {paginationData.totalPages}
+                        </Button>
+                      )}
+                    </>
+                  )}
+                </div>
+
+                <Button
+                  size="sm"
+                  variant="bordered"
+                  isDisabled={!paginationData.hasNextPage || isPending}
+                  onClick={() =>
+                    handlePageChange(paginationData.currentPage + 1)
+                  }
+                  endContent={<ChevronRightIcon className="w-4 h-4" />}
+                >
+                  Next
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
