@@ -155,7 +155,7 @@ export default function GuestsPage({
                   Total Guests
                 </p>
                 <p className="text-2xl font-bold text-gray-900">
-                  {stats.total}
+                  {guests.length}
                 </p>
               </div>
             </div>
