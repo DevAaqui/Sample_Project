@@ -79,35 +79,8 @@ module.exports = (sequelize, DataTypes) => {
   );
 
   User.associate = (models) => {
-    // User has many Rides
-    User.hasMany(models.Ride, {
-      foreignKey: "userId",
-      as: "rides",
-    });
-
-    // User has many Alerts
-    User.hasMany(models.Alert, {
-      foreignKey: "userId",
-      as: "alerts",
-    });
-
-    // User has many Activities
-    User.hasMany(models.Activity, {
-      foreignKey: "userId",
-      as: "activities",
-    });
-
-    // User has many HealthMetrics
-    User.hasMany(models.HealthMetric, {
-      foreignKey: "userId",
-      as: "healthMetrics",
-    });
-
-    // User has many SafetyReports
-    User.hasMany(models.SafetyReport, {
-      foreignKey: "userId",
-      as: "safetyReports",
-    });
+    // No associations needed for the new health-focused system
+    // Users are staff members who manage the system
   };
 
   return User;

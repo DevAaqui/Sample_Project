@@ -2,18 +2,26 @@ module.exports = (sequelize, DataTypes) => {
   const Guest = sequelize.define(
     "Guest",
     {
-      id: {
-        type: DataTypes.INTEGER,
+      guest_id: {
+        type: DataTypes.BIGINT,
         primaryKey: true,
         autoIncrement: true,
       },
-      firstName: {
+      first_name: {
         type: DataTypes.STRING(50),
         allowNull: false,
       },
-      lastName: {
+      last_name: {
         type: DataTypes.STRING(50),
         allowNull: false,
+      },
+      dob: {
+        type: DataTypes.DATEONLY,
+        allowNull: true,
+      },
+      gender: {
+        type: DataTypes.ENUM("Male", "Female", "Other"),
+        allowNull: true,
       },
       email: {
         type: DataTypes.STRING(100),
@@ -22,49 +30,48 @@ module.exports = (sequelize, DataTypes) => {
           isEmail: true,
         },
       },
-      phoneNumber: {
-        type: DataTypes.STRING(20),
+      phone_number: {
+        type: DataTypes.STRING(15),
         allowNull: true,
       },
-      company: {
-        type: DataTypes.STRING(100),
+      emergency_contact_name: {
+        type: DataTypes.STRING(50),
         allowNull: true,
       },
-      purpose: {
-        type: DataTypes.TEXT,
+      emergency_contact_phone: {
+        type: DataTypes.STRING(15),
         allowNull: true,
       },
-      hostId: {
-        type: DataTypes.INTEGER,
-        allowNull: false,
-        references: {
-          model: "users",
-          key: "id",
-        },
-      },
-      checkInTime: {
-        type: DataTypes.DATE,
+      known_conditions: {
+        type: DataTypes.JSON,
         allowNull: true,
       },
-      checkOutTime: {
-        type: DataTypes.DATE,
+      allergies: {
+        type: DataTypes.JSON,
         allowNull: true,
       },
-      status: {
-        type: DataTypes.ENUM("pending", "checked_in", "checked_out", "expired"),
-        defaultValue: "pending",
-      },
-      badgeNumber: {
-        type: DataTypes.STRING(20),
+      baseline_heart_rate: {
+        type: DataTypes.SMALLINT,
         allowNull: true,
-        unique: true,
       },
-      accessLevel: {
-        type: DataTypes.ENUM("restricted", "limited", "full"),
-        defaultValue: "restricted",
+      safe_hr_max: {
+        type: DataTypes.SMALLINT,
+        allowNull: true,
       },
-      notes: {
-        type: DataTypes.TEXT,
+      safe_hr_min: {
+        type: DataTypes.SMALLINT,
+        allowNull: true,
+      },
+      weight_kg: {
+        type: DataTypes.DECIMAL(5, 2),
+        allowNull: true,
+      },
+      height_cm: {
+        type: DataTypes.DECIMAL(5, 2),
+        allowNull: true,
+      },
+      preferred_units: {
+        type: DataTypes.ENUM("metric", "imperial"),
         allowNull: true,
       },
       createdAt: {
@@ -83,36 +90,32 @@ module.exports = (sequelize, DataTypes) => {
       timestamps: true,
       indexes: [
         {
-          fields: ["hostId"],
+          fields: ["email"],
         },
         {
-          fields: ["status"],
-        },
-        {
-          unique: true,
-          fields: ["badgeNumber"],
+          fields: ["phone_number"],
         },
       ],
     }
   );
 
   Guest.associate = (models) => {
-    // Guest belongs to a Host (User)
-    Guest.belongsTo(models.User, {
-      foreignKey: "hostId",
-      as: "host",
+    // Guest has many WearableDevices
+    Guest.hasMany(models.WearableDevice, {
+      foreignKey: "guest_id",
+      as: "wearableDevices",
     });
 
-    // Guest has many Activities
-    Guest.hasMany(models.Activity, {
-      foreignKey: "guestId",
-      as: "activities",
+    // Guest has many GuestMetrics
+    Guest.hasMany(models.GuestMetric, {
+      foreignKey: "guest_id",
+      as: "metrics",
     });
 
-    // Guest has many Alerts
-    Guest.hasMany(models.Alert, {
-      foreignKey: "guestId",
-      as: "alerts",
+    // Guest has many RideSessions
+    Guest.hasMany(models.RideSession, {
+      foreignKey: "guest_id",
+      as: "rideSessions",
     });
   };
 

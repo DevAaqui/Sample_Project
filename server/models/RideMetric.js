@@ -1,34 +1,30 @@
 module.exports = (sequelize, DataTypes) => {
-  const Ride = sequelize.define(
-    "Ride",
+  const RideMetric = sequelize.define(
+    "RideMetric",
     {
-      ride_id: {
+      ride_metric_id: {
         type: DataTypes.BIGINT,
         primaryKey: true,
         autoIncrement: true,
       },
-      ride_name: {
-        type: DataTypes.STRING(100),
+      session_id: {
+        type: DataTypes.BIGINT,
+        allowNull: false,
+        references: {
+          model: "ride_sessions",
+          key: "session_id",
+        },
+      },
+      timestamp: {
+        type: DataTypes.DATE,
         allowNull: false,
       },
-      ride_type: {
-        type: DataTypes.STRING(50),
-        allowNull: true,
-      },
-      min_height_cm: {
-        type: DataTypes.DECIMAL(5, 2),
-        allowNull: true,
-      },
-      max_heart_rate: {
+      heart_rate: {
         type: DataTypes.SMALLINT,
         allowNull: true,
       },
       g_force: {
         type: DataTypes.DECIMAL(3, 2),
-        allowNull: true,
-      },
-      duration_seconds: {
-        type: DataTypes.INTEGER,
         allowNull: true,
       },
       createdAt: {
@@ -43,26 +39,29 @@ module.exports = (sequelize, DataTypes) => {
       },
     },
     {
-      tableName: "rides",
+      tableName: "ride_metrics",
       timestamps: true,
       indexes: [
         {
-          fields: ["ride_name"],
+          fields: ["session_id"],
         },
         {
-          fields: ["ride_type"],
+          fields: ["timestamp"],
+        },
+        {
+          fields: ["session_id", "timestamp"],
         },
       ],
     }
   );
 
-  Ride.associate = (models) => {
-    // Ride has many RideSessions
-    Ride.hasMany(models.RideSession, {
-      foreignKey: "ride_id",
-      as: "rideSessions",
+  RideMetric.associate = (models) => {
+    // RideMetric belongs to a RideSession
+    RideMetric.belongsTo(models.RideSession, {
+      foreignKey: "session_id",
+      as: "rideSession",
     });
   };
 
-  return Ride;
+  return RideMetric;
 };

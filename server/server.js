@@ -37,12 +37,6 @@ app.use("/api/auth", require("./routes/auth"));
 app.use("/api/users", require("./routes/users"));
 app.use("/api/guests", require("./routes/guests"));
 app.use("/api/rides", require("./routes/rides"));
-app.use("/api/vehicles", require("./routes/vehicles"));
-app.use("/api/activities", require("./routes/activities"));
-app.use("/api/alerts", require("./routes/alerts"));
-app.use("/api/health", require("./routes/health"));
-app.use("/api/safety", require("./routes/safety"));
-app.use("/api/maintenance", require("./routes/maintenance"));
 
 // Health check endpoint
 app.get("/health", (req, res) => {
@@ -83,8 +77,14 @@ async function startServer() {
 
     // Sync database (in development)
     if (process.env.NODE_ENV === "development") {
-      await db.sequelize.sync({ alter: true });
-      console.log("✅ Database synchronized.");
+      try {
+        // First try to sync without force
+        await db.sequelize.sync();
+        console.log("✅ Database synchronized (safe mode).");
+      } catch (syncError) {
+        console.error("❌ Database sync error:", syncError);
+        console.log("⚠️  Some tables may need manual migration.");
+      }
     }
 
     // Start server
