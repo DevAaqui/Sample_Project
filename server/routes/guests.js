@@ -9,6 +9,7 @@ const {
   deleteGuest,
   getGuestMetrics,
   addGuestMetric,
+  getLatestGuestsMetrics,
 } = require("../controllers/guestController");
 
 const router = express.Router();
@@ -143,5 +144,10 @@ router.get("/:id/metrics", auth, getGuestMetrics);
 
 // Add guest metric
 router.post("/:id/metrics", auth, addGuestMetric);
+
+// router.get("/metrics/latest", auth, getLatestGuestsMetrics);
+
+router.get("/metrics/latest", getLatestGuestsMetrics);
+
 
 module.exports = router;

@@ -16,164 +16,25 @@ import {
   createColumnHelper,
   SortingState,
 } from "@tanstack/react-table";
+import { Guest } from "@/app/utils/GuestAPI/guestInterface";
+import { columns } from "./commonGuestFunc";
 
-// Define the guest type
-type Guest = {
-  id: number;
-  name: string;
-  age: number;
-  healthScore: number;
-  status: string;
-  lastRide: string;
-  timeSpent: string;
-};
 
-export default function GuestsPage() {
+export default function GuestsPage({ guestsData }: { guestsData: Guest[] }) {
   const [searchTerm, setSearchTerm] = useState("");
   const [sorting, setSorting] = useState<SortingState>([]);
 
-  const guests: Guest[] = [
-    {
-      id: 1,
-      name: "John Smith",
-      age: 28,
-      healthScore: 85,
-      status: "Active",
-      lastRide: "Roller Coaster A",
-      timeSpent: "2h 15m",
-    },
-    {
-      id: 2,
-      name: "Sarah Johnson",
-      age: 32,
-      healthScore: 92,
-      status: "Active",
-      lastRide: "Ferris Wheel",
-      timeSpent: "1h 45m",
-    },
-    {
-      id: 3,
-      name: "Mike Davis",
-      age: 25,
-      healthScore: 78,
-      status: "Resting",
-      lastRide: "Water Slide",
-      timeSpent: "3h 20m",
-    },
-    {
-      id: 4,
-      name: "Emily Wilson",
-      age: 19,
-      healthScore: 88,
-      status: "Active",
-      lastRide: "Carousel",
-      timeSpent: "1h 30m",
-    },
-    {
-      id: 5,
-      name: "David Brown",
-      age: 35,
-      healthScore: 95,
-      status: "Active",
-      lastRide: "Roller Coaster B",
-      timeSpent: "2h 45m",
-    },
-  ];
+  // Use the actual data from props instead of hardcoded data
+  const guests: Guest[] = guestsData || [];
 
-  // Column helper
-  const columnHelper = createColumnHelper<Guest>();
-
-  // Define columns
-  const columns = useMemo(
-    () => [
-      columnHelper.accessor("name", {
-        header: "Guest",
-        cell: ({ row }) => (
-          <div className="flex items-center">
-            <div className="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center">
-              <span className="text-sm font-medium text-gray-700">
-                {row.original.name
-                  .split(" ")
-                  .map((n) => n[0])
-                  .join("")}
-              </span>
-            </div>
-            <div className="ml-4">
-              <div className="text-sm font-medium text-gray-900">
-                {row.original.name}
-              </div>
-            </div>
-          </div>
-        ),
-      }),
-      columnHelper.accessor("age", {
-        header: "Age",
-        cell: ({ getValue }) => (
-          <span className="text-sm text-gray-900">{getValue()}</span>
-        ),
-      }),
-      columnHelper.accessor("healthScore", {
-        header: "Health Score",
-        cell: ({ getValue }) => {
-          const score = getValue();
-          const color =
-            score >= 90
-              ? "text-green-600"
-              : score >= 80
-                ? "text-yellow-600"
-                : "text-red-600";
-          return (
-            <span className={`text-sm font-medium ${color}`}>{score}</span>
-          );
-        },
-      }),
-      columnHelper.accessor("status", {
-        header: "Status",
-        cell: ({ getValue }) => {
-          const status = getValue();
-          const getStatusColor = (status: string) => {
-            switch (status) {
-              case "Active":
-                return "bg-green-100 text-green-800";
-              case "Resting":
-                return "bg-yellow-100 text-yellow-800";
-              case "Inactive":
-                return "bg-gray-100 text-gray-800";
-              default:
-                return "bg-gray-100 text-gray-800";
-            }
-          };
-          return (
-            <span
-              className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(status)}`}
-            >
-              {status}
-            </span>
-          );
-        },
-      }),
-      columnHelper.accessor("lastRide", {
-        header: "Last Ride",
-        cell: ({ getValue }) => (
-          <span className="text-sm text-gray-900">{getValue()}</span>
-        ),
-      }),
-      columnHelper.accessor("timeSpent", {
-        header: "Time Spent",
-        cell: ({ getValue }) => (
-          <span className="text-sm text-gray-900">{getValue()}</span>
-        ),
-      }),
-    ],
-    []
-  );
-
-  // Filter data
+  // Filter data with correct field name
   const filteredData = useMemo(() => {
-    return guests.filter((guest) =>
-      guest.name.toLowerCase().includes(searchTerm.toLowerCase())
+    return guests.filter(
+      (guest) =>
+        guest.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        guest.email.toLowerCase().includes(searchTerm.toLowerCase())
     );
-  }, [searchTerm]);
+  }, [guests, searchTerm]);
 
   // Create table instance
   const table = useReactTable({
@@ -187,6 +48,28 @@ export default function GuestsPage() {
       sorting,
     },
   });
+
+  // Calculate stats from real data
+  const stats = useMemo(() => {
+    const totalGuests = guests.length;
+    const healthyGuests = guests.filter((g) => g.healthScore >= 80).length;
+    const needsAttention = guests.filter(
+      (g) => g.healthScore < 80 && g.healthScore >= 60
+    ).length;
+    const avgHealthScore =
+      guests.length > 0
+        ? Math.round(
+            guests.reduce((sum, g) => sum + g.healthScore, 0) / guests.length
+          )
+        : 0;
+
+    return {
+      total: totalGuests,
+      healthy: healthyGuests,
+      needsAttention: needsAttention,
+      avgHealthScore: avgHealthScore,
+    };
+  }, [guests]);
 
   return (
     <div className="space-y-6">
@@ -202,7 +85,7 @@ export default function GuestsPage() {
       <div className="bg-white rounded-xl p-6">
         <Input
           type="text"
-          placeholder="Search guests..."
+          placeholder="Search guests by name or email..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           variant="bordered"
@@ -225,7 +108,9 @@ export default function GuestsPage() {
                 <p className="text-sm font-medium text-gray-600">
                   Total Guests
                 </p>
-                <p className="text-2xl font-bold text-gray-900">1,247</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {stats.total}
+                </p>
               </div>
             </div>
           </CardBody>
@@ -238,9 +123,11 @@ export default function GuestsPage() {
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">
-                  Active Guests
+                  Healthy Guests
                 </p>
-                <p className="text-2xl font-bold text-gray-900">892</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {stats.healthy}
+                </p>
               </div>
             </div>
           </CardBody>
@@ -252,8 +139,12 @@ export default function GuestsPage() {
                 <UserGroupIcon className="h-6 w-6 text-yellow-600" />
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Resting</p>
-                <p className="text-2xl font-bold text-gray-900">234</p>
+                <p className="text-sm font-medium text-gray-600">
+                  Needs Attention
+                </p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {stats.needsAttention}
+                </p>
               </div>
             </div>
           </CardBody>
@@ -268,7 +159,9 @@ export default function GuestsPage() {
                 <p className="text-sm font-medium text-gray-600">
                   Avg Health Score
                 </p>
-                <p className="text-2xl font-bold text-gray-900">87.6</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {stats.avgHealthScore}%
+                </p>
               </div>
             </div>
           </CardBody>

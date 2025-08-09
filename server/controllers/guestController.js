@@ -3,8 +3,14 @@ const {
   WearableDevice,
   GuestMetric,
   RideSession,
+  Ride,
 } = require("../models");
 const { Op } = require("sequelize");
+const {
+  formatTimeDuration,
+  calculateHealthScore,
+  calculateAge,
+} = require("../utils/healthUtils/healthMetricFns");
 
 // Get all guests
 const getAllGuests = async (req, res) => {
@@ -293,6 +299,112 @@ const addGuestMetric = async (req, res) => {
   }
 };
 
+// Get latest guests with comprehensive data
+const getLatestGuestsMetrics = async (req, res) => {
+  try {
+    // Get all guests with their latest metrics and ride sessions
+    const guests = await Guest.findAll({
+      include: [
+        {
+          model: GuestMetric,
+          as: "metrics",
+          attributes: [
+            "metric_id",
+            "timestamp",
+            "heart_rate",
+            "blood_pressure",
+            "steps",
+            "calories_burned",
+          ],
+          order: [["timestamp", "DESC"]],
+          limit: 1, // Get only the latest metric
+        },
+        {
+          model: RideSession,
+          as: "rideSessions",
+          attributes: [
+            "session_id",
+            "start_time",
+            "end_time",
+            "calories_burned",
+            "ride_id",
+          ],
+          order: [["start_time", "DESC"]],
+          limit: 1, // Get only the latest ride session
+          include: [
+            {
+              model: Ride,
+              as: "ride",
+              attributes: ["ride_name"],
+            },
+          ],
+        },
+      ],
+      order: [["createdAt", "DESC"]],
+      limit: 30,
+    });
+
+    // Process each guest to calculate required data
+    const processedGuests = guests.map((guest) => {
+      const latestMetric =
+        guest.metrics && guest.metrics.length > 0 ? guest.metrics[0] : null;
+      const latestRideSession =
+        guest.rideSessions && guest.rideSessions.length > 0
+          ? guest.rideSessions[0]
+          : null;
+
+      // Calculate age
+      const age = calculateAge(guest.dob);
+
+      // Calculate health score
+      const healthScore = calculateHealthScore(guest, latestMetric);
+
+      // Get last ride information
+      const lastRide = latestRideSession?.ride?.ride_name || "No rides yet";
+
+      // Calculate total time spent (sum of all ride sessions)
+      const totalTimeSpent = guest.rideSessions.reduce((total, session) => {
+        if (session.start_time && session.end_time) {
+          const duration = Math.floor(
+            (new Date(session.end_time) - new Date(session.start_time)) /
+              (1000 * 60)
+          ); // Convert to minutes
+          return total + duration;
+        }
+        return total;
+      }, 0);
+
+      return {
+        id: guest.guest_id,
+        fullName: `${guest.first_name} ${guest.last_name}`,
+        age: age,
+        healthScore: healthScore,
+        lastRide: lastRide,
+        totalTimeSpent: formatTimeDuration(totalTimeSpent),
+        email: guest.email,
+        gender: guest.gender,
+        // Additional health data for debugging
+        latestHeartRate: latestMetric?.heart_rate || null,
+        latestBloodPressure: latestMetric?.blood_pressure || null,
+        latestSteps: latestMetric?.steps || null,
+        latestCalories: latestMetric?.calories_burned || null,
+        safeHeartRateRange: `${guest.safe_hr_min || 60}-${
+          guest.safe_hr_max || 100
+        }`,
+      };
+    });
+
+    res.json({
+      guests: processedGuests,
+      total: processedGuests.length,
+      message: "Latest guests data retrieved successfully",
+    });
+  } catch (error) {
+    console.error("Get latest guests metrics error:", error);
+    res.status(500).json({ error: "Failed to get latest guests metrics" });
+  }
+};
+
 module.exports = {
   getAllGuests,
   getGuestById,
@@ -301,4 +413,5 @@ module.exports = {
   deleteGuest,
   getGuestMetrics,
   addGuestMetric,
+  getLatestGuestsMetrics,
 };
