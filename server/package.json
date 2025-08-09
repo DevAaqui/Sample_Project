@@ -10,7 +10,14 @@
     "setup": "node setup-db.js",
     "db:migrate": "sequelize-cli db:migrate",
     "db:seed": "sequelize-cli db:seed:all",
-    "db:reset": "sequelize-cli db:drop && sequelize-cli db:create && sequelize-cli db:migrate && sequelize-cli db:seed:all"
+    "db:reset": "sequelize-cli db:drop && sequelize-cli db:create && sequelize-cli db:migrate && sequelize-cli db:seed:all",
+    "seed:all": "node scripts/seedAll.js",
+    "seed:guests": "node scripts/seedGuests.js",
+    "seed:rides": "node scripts/seedRides.js",
+    "seed:users": "node scripts/seedAll.js 0",
+    "clear:all": "node -e \"require('./scripts/seedAll.js').clearAll().then(() => process.exit(0)).catch(() => process.exit(1))\"",
+    "clear:guests": "node -e \"require('./scripts/seedGuests.js').clearGuestData().then(() => process.exit(0)).catch(() => process.exit(1))\"",
+    "clear:rides": "node -e \"require('./scripts/seedRides.js').clearRideData().then(() => process.exit(0)).catch(() => process.exit(1))\""
   },
   "keywords": ["safepulse", "nodejs", "express", "sequelize", "mysql"],
   "author": "SafePulse Team",
