@@ -1,9 +1,9 @@
 // safepulse/redux/store.ts
-import { configureStore, combineReducers } from '@reduxjs/toolkit';
-import { persistStore, persistReducer } from 'redux-persist';
-import storage from 'redux-persist/lib/storage'; // defaults to localStorage
-import guestReducer from '../slices/guestSlice';
-import headerReducer from '../slices/headerSlice';
+import { configureStore, combineReducers } from "@reduxjs/toolkit";
+import { persistStore, persistReducer } from "redux-persist";
+import storage from "redux-persist/lib/storage"; // defaults to localStorage
+import guestReducer from "../slices/guestSlice";
+import headerReducer from "../slices/headerSlice";
 
 // Root reducer
 const rootReducer = combineReducers({
@@ -11,39 +11,53 @@ const rootReducer = combineReducers({
   header: headerReducer,
 });
 
-// Persist configuration for header slice only
-const persistConfig = {
-  key: 'root',
+// Separate persist config for header with field filtering
+const headerPersistConfig = {
+  key: "header",
   storage,
-  whitelist: ['header'], // Only persist header state
-  blacklist: ['guest'], // Don't persist guest data
+  whitelist: ["refreshInterval", "isPaused"], // Only persist these specific fields
+  blacklist: ["pageCallbackFunc", "lastUpdated", "nextRefreshTime"], // Explicitly exclude these
 };
 
-// Create persisted reducer
-const persistedReducer = persistReducer(persistConfig, rootReducer);
+// Create persisted header reducer
+const persistedHeaderReducer = persistReducer(
+  headerPersistConfig,
+  headerReducer
+);
+
+// Root reducer with persisted header
+const persistedRootReducer = combineReducers({
+  guest: guestReducer,
+  header: persistedHeaderReducer,
+});
 
 // Configure store
 export const store = configureStore({
-  reducer: persistedReducer,
+  reducer: persistedRootReducer,
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
       serializableCheck: {
         // Ignore these action types for redux-persist
         ignoredActions: [
-          'persist/PERSIST',
-          'persist/REHYDRATE',
-          'persist/PAUSE',
-          'persist/PURGE',
-          'persist/REGISTER',
-          'persist/FLUSH',
-          'guest/fetchGuests/pending', 
-          'guest/fetchGuests/fulfilled', 
-          'guest/fetchGuests/rejected'
+          "persist/PERSIST",
+          "persist/REHYDRATE",
+          "persist/PAUSE",
+          "persist/PURGE",
+          "persist/REGISTER",
+          "persist/FLUSH",
+          "guest/fetchGuests/pending",
+          "guest/fetchGuests/fulfilled",
+          "guest/fetchGuests/rejected",
         ],
         // Ignore these field paths in all actions
-        ignoredActionPaths: ['meta.arg', 'payload.timestamp'],
+        ignoredActionPaths: ["meta.arg", "payload.timestamp"],
         // Ignore these paths in the state
-        ignoredPaths: ['guest.timestamp', 'header.lastUpdated', 'header.nextRefreshTime'],
+        ignoredPaths: [
+          "guest.timestamp",
+          "header.lastUpdated",
+          "header.nextRefreshTime",
+          "header.pageCallbackFunc",
+        ],
       },
     }),
 });

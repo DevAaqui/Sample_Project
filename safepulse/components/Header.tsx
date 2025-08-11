@@ -12,6 +12,7 @@ import LastUpdated from "./LastUpdated";
 import { useAutoRefresh } from "@/redux/reduxHooks/useAutoRefresh";
 import { useAppSelector } from "@/redux/reduxHooks/reduxHook";
 import { RootState } from "@/redux/store/store";
+import { usePathname } from "next/navigation";
 
 interface HeaderProps {
   parkName?: string;
@@ -32,6 +33,8 @@ export default function Header({
   onNotificationClick,
   onSettingsClick,
 }: HeaderProps) {
+  const pathname = usePathname();
+  console.log("pathname>>>>", pathname);
   const { user, logout } = useAuth();
   const refreshInterval = useAppSelector(
     (state: RootState) => state.header?.refreshInterval
@@ -67,13 +70,15 @@ export default function Header({
 
         <div className="flex items-center space-x-6">
           {/* Last Updated Section */}
-          <LastUpdated
-            isRefreshing={isRefreshing}
-            lastRefreshed={lastRefreshed || new Date()}
-            refresh={refresh}
-            isPaused={isPaused}
-            togglePause={togglePauseFunc}
-          />
+          {pathname === "/guests" && (
+            <LastUpdated
+              isRefreshing={isRefreshing}
+              lastRefreshed={lastRefreshed || new Date()}
+              refresh={refresh}
+              isPaused={isPaused}
+              togglePause={togglePauseFunc}
+            />
+          )}
 
           <div className="flex items-center space-x-4">
             <div className="relative">
