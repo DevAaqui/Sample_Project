@@ -34,6 +34,9 @@ import {
   selectGuestStats,
 } from "@/redux/slices/guestSlice";
 import { useAppDispatch, useAppSelector } from "@/redux/reduxHooks/reduxHook";
+import { useAutoRefresh } from "@/redux/reduxHooks/useAutoRefresh";
+import { RootState } from "@/redux/store/store";
+import { setPageCallbackFunc } from "@/redux/slices/headerSlice";
 
 interface GuestClientProps {
   initialGuests: Guest[];
@@ -55,6 +58,14 @@ export default function GuestsPage({
   const currentPage = useAppSelector(selectCurrentPage);
   const searchTerm = useAppSelector(selectSearchTerm);
   const stats = useAppSelector(selectGuestStats);
+
+  // Create a stable callback function for auto-refresh
+  const fetchPageData = useMemo(() => {
+    return async () => {
+      console.log("Auto-refresh fetching page:", currentPage);
+      await dispatch(fetchGuests(currentPage));
+    };
+  }, [dispatch, currentPage]);
 
   // Create table instance
   const table = useReactTable({
@@ -94,6 +105,13 @@ export default function GuestsPage({
     }
   }, [dispatch, initialGuests, initialPagination]);
 
+  useEffect(() => {
+    dispatch(setPageCallbackFunc(fetchPageData));
+  }, [dispatch, fetchPageData]);
+
+  // Update loading state to include auto-refresh
+  const isLoading = loading;
+
   return (
     <div className="space-y-6">
       {/* Page Header */}
@@ -102,6 +120,26 @@ export default function GuestsPage({
         <p className="text-gray-600">
           Monitor and manage guest activities and health metrics
         </p>
+        {/* Show current refresh status */}
+        {/* <div className="mt-2 text-sm text-gray-500">
+          {isRefreshing ? (
+            <span className="flex items-center">
+              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse mr-2"></div>
+              Auto-refresh: {refreshInterval}{" "}
+              {lastRefreshed && `(Next: ${lastRefreshed})`}
+            </span>
+          ) : isPaused ? (
+            <span className="flex items-center">
+              <div className="w-2 h-2 bg-yellow-500 rounded-full mr-2"></div>
+              Auto-refresh paused
+            </span>
+          ) : (
+            <span className="flex items-center">
+              <div className="w-2 h-2 bg-gray-400 rounded-full mr-2"></div>
+              Manual refresh
+            </span>
+          )}
+        </div> */}
       </div>
 
       {/* Error Display */}
@@ -234,7 +272,7 @@ export default function GuestsPage({
               ))}
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {loading ? (
+              {isLoading ? (
                 <tr>
                   <td
                     colSpan={6}
@@ -293,7 +331,7 @@ export default function GuestsPage({
                 <Button
                   size="sm"
                   variant="bordered"
-                  isDisabled={!pagination.hasPrevPage || loading}
+                  isDisabled={!pagination.hasPrevPage || isLoading}
                   onClick={() => handlePageChange(pagination.currentPage - 1)}
                   startContent={<ChevronLeftIcon className="w-4 h-4" />}
                 >
@@ -316,7 +354,7 @@ export default function GuestsPage({
                           }
                           onClick={() => handlePageChange(pageNum)}
                           className="min-w-[40px]"
-                          isDisabled={loading}
+                          isDisabled={isLoading}
                         >
                           {pageNum}
                         </Button>
@@ -337,7 +375,7 @@ export default function GuestsPage({
                             handlePageChange(pagination.currentPage)
                           }
                           className="min-w-[40px]"
-                          isDisabled={loading}
+                          isDisabled={isLoading}
                         >
                           {pagination.currentPage}
                         </Button>
@@ -353,7 +391,7 @@ export default function GuestsPage({
                             handlePageChange(pagination.totalPages)
                           }
                           className="min-w-[40px]"
-                          isDisabled={loading}
+                          isDisabled={isLoading}
                         >
                           {pagination.totalPages}
                         </Button>
@@ -365,7 +403,7 @@ export default function GuestsPage({
                 <Button
                   size="sm"
                   variant="bordered"
-                  isDisabled={!pagination.hasNextPage || loading}
+                  isDisabled={!pagination.hasNextPage || isLoading}
                   onClick={() => handlePageChange(pagination.currentPage + 1)}
                   endContent={<ChevronRightIcon className="w-4 h-4" />}
                 >

@@ -8,6 +8,10 @@ import {
   ArrowRightOnRectangleIcon,
 } from "@heroicons/react/24/outline";
 import { useAuth } from "@/contexts/AuthContext";
+import LastUpdated from "./LastUpdated";
+import { useAutoRefresh } from "@/redux/reduxHooks/useAutoRefresh";
+import { useAppSelector } from "@/redux/reduxHooks/reduxHook";
+import { RootState } from "@/redux/store/store";
 
 interface HeaderProps {
   parkName?: string;
@@ -29,6 +33,23 @@ export default function Header({
   onSettingsClick,
 }: HeaderProps) {
   const { user, logout } = useAuth();
+  const refreshInterval = useAppSelector(
+    (state: RootState) => state.header?.refreshInterval
+  );
+  const pageCallbackFunc = useAppSelector(
+    (state: RootState) => state.header?.pageCallbackFunc
+  );
+
+  const handleLogout = () => {
+    // Reset header state on logout
+    logout();
+  };
+
+  const { isRefreshing, refresh, lastRefreshed, isPaused, togglePauseFunc } =
+    useAutoRefresh(
+      pageCallbackFunc,
+      refreshInterval || 60 * 1000 // 60 seconds
+    );
 
   return (
     <header className="bg-white shadow-sm border-b border-gray-200">
@@ -44,40 +65,52 @@ export default function Header({
           </div>
         </div>
 
-        <div className="flex items-center space-x-4">
-          <div className="relative">
-            <button
-              className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
-              onClick={onNotificationClick}
-            >
-              <BellIcon className="w-5 h-5 text-gray-600" />
-              {notificationCount > 0 && (
-                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                  {notificationCount}
-                </span>
-              )}
-            </button>
-          </div>
-          <button
-            className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
-            onClick={onSettingsClick}
-          >
-            <Cog6ToothIcon className="w-5 h-5 text-gray-600" />
-          </button>
+        <div className="flex items-center space-x-6">
+          {/* Last Updated Section */}
+          <LastUpdated
+            isRefreshing={isRefreshing}
+            refresh={refresh}
+            isPaused={isPaused}
+            togglePause={togglePauseFunc}
+          />
 
-          {/* User Menu */}
-          <div className="flex items-center space-x-3">
-            <div className="text-sm text-gray-700">
-              <span className="font-medium">{user?.firstName} {user?.lastName}</span>
-              <span className="text-gray-500 ml-2">({user?.role})</span>
+          <div className="flex items-center space-x-4">
+            <div className="relative">
+              <button
+                className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+                onClick={onNotificationClick}
+              >
+                <BellIcon className="w-5 h-5 text-gray-600" />
+                {notificationCount > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                    {notificationCount}
+                  </span>
+                )}
+              </button>
             </div>
             <button
-              onClick={logout}
-              className="p-2 rounded-lg hover:bg-gray-100 transition-colors text-gray-600 hover:text-red-600"
-              title="Logout"
+              className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+              onClick={onSettingsClick}
             >
-              <ArrowRightOnRectangleIcon className="w-5 h-5" />
+              <Cog6ToothIcon className="w-5 h-5 text-gray-600" />
             </button>
+
+            {/* User Menu */}
+            <div className="flex items-center space-x-3">
+              <div className="text-sm text-gray-700">
+                <span className="font-medium">
+                  {user?.firstName} {user?.lastName}
+                </span>
+                <span className="text-gray-500 ml-2">({user?.role})</span>
+              </div>
+              <button
+                onClick={handleLogout}
+                className="p-2 rounded-lg hover:bg-gray-100 transition-colors text-gray-600 hover:text-red-600"
+                title="Logout"
+              >
+                <ArrowRightOnRectangleIcon className="w-5 h-5" />
+              </button>
+            </div>
           </div>
         </div>
       </div>
