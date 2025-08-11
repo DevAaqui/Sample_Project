@@ -23,10 +23,11 @@ interface AutoRefreshBarProps {
 }
 
 const intervalOptions = [
-  // { label: '30 sec', value: 30 * 1000 },
+  { label: '10 sec', value: 10 * 1000 },
+  { label: '30 sec', value: 30 * 1000 },
   { label: '1 min', value: 60 * 1000 },
   { label: '5 min', value: 300 * 1000 },
-  { label: '10 min', value: 600 * 1000 },
+  // { label: '10 min', value: 600 * 1000 },
 ];
 
 const AutoRefreshBar: React.FC<AutoRefreshBarProps> = ({
@@ -98,7 +99,7 @@ const AutoRefreshBar: React.FC<AutoRefreshBarProps> = ({
         onChange={(e) => onIntervalChange(Number(e.target.value))}
         aria-label="Select refresh interval"
         placeholder="Interval"
-        isDisabled={isPaused}
+        isDisabled={!isPaused}
       >
         {intervalOptions.map((opt) => (
           <SelectItem key={opt.value} textValue={opt.label}>

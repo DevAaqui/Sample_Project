@@ -69,6 +69,7 @@ export default function Header({
           {/* Last Updated Section */}
           <LastUpdated
             isRefreshing={isRefreshing}
+            lastRefreshed={lastRefreshed || new Date()}
             refresh={refresh}
             isPaused={isPaused}
             togglePause={togglePauseFunc}
