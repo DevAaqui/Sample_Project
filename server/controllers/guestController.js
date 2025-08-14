@@ -10,6 +10,13 @@ const {
   formatTimeDuration,
   calculateHealthScore,
   calculateAge,
+  calculateStressLevel,
+  determineHealthStatus,
+  calculateTemperature,
+  getHeartRateColor,
+  getStressLevelColor,
+  getHealthStatusColor,
+  calculateSummaryStats,
 } = require("../utils/healthUtils/healthMetricFns");
 
 // Get all guests
@@ -391,7 +398,7 @@ const getLatestGuestsMetrics = async (req, res) => {
         fullName: `${guest.first_name} ${guest.last_name}`,
         age: age,
         healthScore: healthScore,
-        lastRide: lastRide, 
+        lastRide: lastRide,
         totalTimeSpent: formatTimeDuration(totalTimeSpent),
         email: guest.email,
         gender: guest.gender,
@@ -403,7 +410,7 @@ const getLatestGuestsMetrics = async (req, res) => {
         safeHeartRateRange: `${guest.safe_hr_min || 60}-${
           guest.safe_hr_max || 100
         }`,
-      }; 
+      };
     });
 
     // Calculate pagination info
@@ -431,6 +438,115 @@ const getLatestGuestsMetrics = async (req, res) => {
   }
 };
 
+const getLatestHealthMetrics = async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 100;
+    const offset = (page - 1) * limit;
+
+    const totalCount = await Guest.count();
+    const totalPages = Math.ceil(totalCount / limit);
+    const hasNextPage = page < totalPages;
+    const hasPrevPage = page > 1;
+
+    const guests = await Guest.findAll({
+      include: [
+        {
+          model: GuestMetric,
+          as: "metrics",
+          attributes: [
+            "metric_id",
+            "timestamp",
+            "heart_rate",
+            "blood_pressure",
+            "steps",
+            "calories_burned",
+          ],
+          order: [["timestamp", "DESC"]],
+          limit: 1, // Get only the latest metric
+        },
+      ],
+      order: [["createdAt", "DESC"]],
+      limit: limit,
+      offset: offset,
+    });
+
+    // Process guests to include calculated health data
+    const processedGuests = guests.map((guest) => {
+      const latestMetric =
+        guest.metrics && guest.metrics.length > 0 ? guest.metrics[0] : null;
+
+      // Calculate age
+      const age = calculateAge(guest.dob);
+
+      // Calculate health score based on metrics
+      const healthScore = calculateHealthScore(guest, latestMetric);
+
+      // Determine stress level based on heart rate and other factors
+      const stressLevel = calculateStressLevel(latestMetric);
+
+      // Determine overall health status
+      const healthStatus = determineHealthStatus(healthScore, latestMetric);
+
+      // Calculate temperature (simulated based on health score and stress)
+      const temperature = calculateTemperature(healthScore, stressLevel);
+
+      // Format blood pressure
+      const bloodPressure = latestMetric?.blood_pressure || "N/A";
+
+      // Format heart rate with color coding
+      const heartRate = latestMetric?.heart_rate || 0;
+      const heartRateColor = getHeartRateColor(heartRate);
+
+      return {
+        id: guest.guest_id,
+        initials: `${guest.first_name.charAt(0)}${guest.last_name.charAt(0)}`,
+        fullName: `${guest.first_name} ${guest.last_name}`,
+        age: age,
+        heartRate: {
+          value: heartRate,
+          color: heartRateColor,
+          unit: "bpm",
+        },
+        bloodPressure: bloodPressure,
+        temperature: temperature,
+        stressLevel: {
+          value: stressLevel,
+          color: getStressLevelColor(stressLevel),
+        },
+        healthStatus: {
+          value: healthStatus,
+          color: getHealthStatusColor(healthStatus),
+        },
+        lastCheck: latestMetric?.timestamp || guest.createdAt,
+        // Include raw metric data for additional processing
+        rawMetrics: latestMetric,
+      };
+    });
+
+    // Calculate summary statistics
+    const summaryStats = calculateSummaryStats(processedGuests);
+
+    res.json({
+      guests: processedGuests,
+      summaryStats: summaryStats,
+      pagination: {
+        currentPage: page,
+        totalPages: totalPages,
+        totalCount: totalCount,
+        limit: limit,
+        hasNextPage: hasNextPage,
+        hasPrevPage: hasPrevPage,
+        nextPage: hasNextPage ? page + 1 : null,
+        prevPage: hasPrevPage ? page - 1 : null,
+      },
+    });
+  } catch (error) {
+    console.error("Get latest health metrics error:", error);
+    res.status(500).json({ error: "Failed to get latest health metrics" });
+  }
+};
+
 module.exports = {
   getAllGuests,
   getGuestById,
@@ -440,4 +556,5 @@ module.exports = {
   getGuestMetrics,
   addGuestMetric,
   getLatestGuestsMetrics,
+  getLatestHealthMetrics,
 };

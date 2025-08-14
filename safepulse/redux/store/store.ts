@@ -4,11 +4,13 @@ import { persistStore, persistReducer } from "redux-persist";
 import storage from "redux-persist/lib/storage"; // defaults to localStorage
 import guestReducer from "../slices/guestSlice";
 import headerReducer from "../slices/headerSlice";
+import guestHealthReducer from "../slices/guestsHealthSlice";
 
 // Root reducer
 const rootReducer = combineReducers({
   guest: guestReducer,
   header: headerReducer,
+  guestHealth: guestHealthReducer,
 });
 
 // Separate persist config for header with field filtering
@@ -29,6 +31,7 @@ const persistedHeaderReducer = persistReducer(
 const persistedRootReducer = combineReducers({
   guest: guestReducer,
   header: persistedHeaderReducer,
+  guestHealth: guestHealthReducer,
 });
 
 // Configure store

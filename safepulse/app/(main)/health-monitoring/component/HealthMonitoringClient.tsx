@@ -13,108 +13,160 @@ import {
   ArrowTrendingUpIcon,
   ShieldCheckIcon,
 } from "@heroicons/react/24/outline";
+import {
+  Card,
+  CardBody,
+  CardHeader,
+  Input,
+  Select,
+  SelectItem,
+  Button,
+} from "@heroui/react";
 
-export default function HealthMonitoringClient() {
+const timeRangeOptions = [
+  { key: "today", label: "Today" },
+  { key: "week", label: "This Week" },
+  { key: "month", label: "This Month" },
+  { key: "year", label: "This Year" },
+];
+
+// Health status options
+const healthStatusOptions = [
+  { key: "all", label: "All Status" },
+  { key: "excellent", label: "Excellent" },
+  { key: "good", label: "Good" },
+  { key: "fair", label: "Fair" },
+  { key: "poor", label: "Poor" },
+  { key: "critical", label: "Critical" },
+];
+
+const getStatusColor = (status: string) => {
+  switch (status) {
+    case "Excellent":
+      return "bg-green-100 text-green-800";
+    case "Good":
+      return "bg-blue-100 text-blue-800";
+    case "Fair":
+      return "bg-yellow-100 text-yellow-800";
+    case "Poor":
+      return "bg-orange-100 text-orange-800";
+    case "Critical":
+      return "bg-red-100 text-red-800";
+    default:
+      return "bg-gray-100 text-gray-800";
+  }
+};
+
+const getAlertSeverityColor = (severity: string) => {
+  switch (severity) {
+    case "Alert":
+      return "bg-red-100 text-red-800";
+    case "Warning":
+      return "bg-yellow-100 text-yellow-800";
+    case "Info":
+      return "bg-blue-100 text-blue-800";
+    default:
+      return "bg-gray-100 text-gray-800";
+  }
+};
+
+const getHeartRateColor = (heartRate: number) => {
+  if (heartRate > 140) return "text-red-600";
+  if (heartRate > 120) return "text-yellow-600";
+  if (heartRate < 60) return "text-blue-600";
+  return "text-green-600";
+};
+
+const getStressLevelColor = (stressLevel: string) => {
+  switch (stressLevel) {
+    case "Extreme":
+      return "text-red-600";
+    case "Very High":
+      return "text-red-600";
+    case "High":
+      return "text-orange-600";
+    case "Moderate":
+      return "text-yellow-600";
+    case "Low":
+      return "text-green-600";
+    default:
+      return "text-gray-600";
+  }
+};
+
+const getColorClasses = (color: string) => {
+  switch (color) {
+    case "blue":
+      return { bg: "bg-blue-100", text: "text-blue-600" };
+    case "green":
+      return { bg: "bg-green-100", text: "text-green-600" };
+    case "yellow":
+      return { bg: "bg-yellow-100", text: "text-yellow-600" };
+    case "red":
+      return { bg: "bg-red-100", text: "text-red-600" };
+    case "purple":
+      return { bg: "bg-purple-100", text: "text-purple-600" };
+    case "lightgreen":
+      return { bg: "bg-green-100", text: "text-green-600" };
+    case "orange":
+      return { bg: "bg-orange-100", text: "text-orange-600" };
+    default:
+      return { bg: "bg-gray-100", text: "text-gray-600" };
+  }
+};
+
+export default function HealthMonitoringClient({
+  initialGuestsHealthData,
+  initialPaginationHealthData,
+}: {
+  initialGuestsHealthData: any;
+  initialPaginationHealthData: any;
+}) {
+  console.log("initialGuestsHealthData>>>>>", initialGuestsHealthData);
   const [selectedTimeRange, setSelectedTimeRange] = useState("today");
   const [selectedHealthStatus, setSelectedHealthStatus] = useState("all");
+  const [searchQuery, setSearchQuery] = useState("");
+  // Calculate stats from the actual data
+  const calculateStats = () => {
+    if (!initialGuestsHealthData || initialGuestsHealthData.length === 0) {
+      return {
+        totalMonitored: 0,
+        normalStatus: 0,
+        activeAlerts: 0,
+        avgHealthScore: 0,
+      };
+    }
 
-  const healthData = [
-    {
-      id: 1,
-      guestName: "John Smith",
-      age: 28,
-      heartRate: 145,
-      bloodPressure: "120/80",
-      temperature: 98.6,
-      stressLevel: "Medium",
-      lastCheck: "2024-01-15 14:30",
-      status: "Normal",
-      alerts: [],
-    },
-    {
-      id: 2,
-      guestName: "Sarah Johnson",
-      age: 32,
-      heartRate: 72,
-      bloodPressure: "110/70",
-      temperature: 97.8,
-      stressLevel: "Low",
-      lastCheck: "2024-01-15 14:15",
-      status: "Excellent",
-      alerts: [],
-    },
-    {
-      id: 3,
-      guestName: "Mike Davis",
-      age: 25,
-      heartRate: 125,
-      bloodPressure: "118/78",
-      temperature: 99.2,
-      stressLevel: "Medium",
-      lastCheck: "2024-01-15 14:00",
-      status: "Normal",
-      alerts: [],
-    },
-    {
-      id: 4,
-      guestName: "Emily Wilson",
-      age: 19,
-      heartRate: 85,
-      bloodPressure: "105/65",
-      temperature: 98.1,
-      stressLevel: "Low",
-      lastCheck: "2024-01-15 13:45",
-      status: "Excellent",
-      alerts: [],
-    },
-    {
-      id: 5,
-      guestName: "David Brown",
-      age: 35,
-      heartRate: 155,
-      bloodPressure: "135/85",
-      temperature: 100.1,
-      stressLevel: "High",
-      lastCheck: "2024-01-15 13:30",
-      status: "Warning",
-      alerts: ["Elevated heart rate", "High stress level"],
-    },
-  ];
+    const totalMonitored = initialGuestsHealthData.length;
+    const normalStatus = initialGuestsHealthData.filter(
+      (guest: any) =>
+        guest.healthStatus.value === "Excellent" ||
+        guest.healthStatus.value === "Good"
+    ).length;
 
-  const alerts = [
-    {
-      id: 1,
-      guestName: "David Brown",
-      type: "High Heart Rate",
-      severity: "Warning",
-      message: "Heart rate elevated to 155 bpm",
-      timestamp: "2024-01-15 13:30",
-      status: "Active",
-    },
-    {
-      id: 2,
-      guestName: "Lisa Anderson",
-      type: "High Stress",
-      severity: "Warning",
-      message: "Stress level detected as high",
-      timestamp: "2024-01-15 13:15",
-      status: "Resolved",
-    },
-    {
-      id: 3,
-      guestName: "Tom Wilson",
-      type: "Blood Pressure",
-      severity: "Alert",
-      message: "Blood pressure reading: 140/90",
-      timestamp: "2024-01-15 13:00",
-      status: "Active",
-    },
-  ];
+    const activeAlerts = initialGuestsHealthData.filter(
+      (guest: any) =>
+        guest.healthStatus.value === "Critical" ||
+        guest.healthStatus.value === "Poor"
+    ).length;
+
+    // Calculate average health score (simplified - you can enhance this)
+    const avgHealthScore = Math.round((normalStatus / totalMonitored) * 100);
+
+    return {
+      totalMonitored,
+      normalStatus,
+      activeAlerts,
+      avgHealthScore,
+    };
+  };
+
+  const statsData = calculateStats();
 
   const stats = [
     {
       title: "Total Monitored",
-      value: "1,247",
+      value: statsData.totalMonitored.toString(),
       change: "+8%",
       changeType: "positive",
       icon: UserGroupIcon,
@@ -122,7 +174,7 @@ export default function HealthMonitoringClient() {
     },
     {
       title: "Normal Status",
-      value: "1,180",
+      value: statsData.normalStatus.toString(),
       change: "+5%",
       changeType: "positive",
       icon: CheckCircleIcon,
@@ -130,15 +182,15 @@ export default function HealthMonitoringClient() {
     },
     {
       title: "Active Alerts",
-      value: "3",
+      value: statsData.activeAlerts.toString(),
       change: "-25%",
       changeType: "positive",
       icon: ExclamationTriangleIcon,
       color: "red",
     },
     {
-      title: "Avg Health Score",
-      value: "87.6",
+      title: "Health Score",
+      value: `${statsData.avgHealthScore}%`,
       change: "+2%",
       changeType: "positive",
       icon: HeartIcon,
@@ -146,70 +198,70 @@ export default function HealthMonitoringClient() {
     },
   ];
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "Excellent":
-        return "bg-green-100 text-green-800";
-      case "Normal":
-        return "bg-blue-100 text-blue-800";
-      case "Warning":
-        return "bg-yellow-100 text-yellow-800";
-      case "Alert":
-        return "bg-red-100 text-red-800";
-      default:
-        return "bg-gray-100 text-gray-800";
-    }
+  // Generate alerts from health data
+  const generateAlerts = () => {
+    if (!initialGuestsHealthData) return [];
+
+    const alerts: any[] = [];
+
+    initialGuestsHealthData.forEach((guest: any) => {
+      // Heart rate alerts
+      if (guest.heartRate.value > 120) {
+        alerts.push({
+          id: `hr-${guest.id}`,
+          guestName: guest.fullName,
+          type: "High Heart Rate",
+          severity: guest.heartRate.value > 140 ? "Alert" : "Warning",
+          message: `Heart rate elevated to ${guest.heartRate.value} bpm`,
+          timestamp: guest.lastCheck,
+          status: "Active",
+        });
+      }
+
+      // Stress level alerts
+      if (
+        guest.stressLevel.value === "High" ||
+        guest.stressLevel.value === "Very High" ||
+        guest.stressLevel.value === "Extreme"
+      ) {
+        alerts.push({
+          id: `stress-${guest.id}`,
+          guestName: guest.fullName,
+          type: "High Stress",
+          severity: guest.stressLevel.value === "Extreme" ? "Alert" : "Warning",
+          message: `Stress level detected as ${guest.stressLevel.value}`,
+          timestamp: guest.lastCheck,
+          status: "Active",
+        });
+      }
+
+      // Critical health status
+      if (guest.healthStatus.value === "Critical") {
+        alerts.push({
+          id: `critical-${guest.id}`,
+          guestName: guest.fullName,
+          type: "Critical Health",
+          severity: "Alert",
+          message: `Health status is critical - requires immediate attention`,
+          timestamp: guest.lastCheck,
+          status: "Active",
+        });
+      }
+    });
+
+    return alerts.slice(0, 5); // Limit to 5 most recent alerts
   };
 
-  const getAlertSeverityColor = (severity: string) => {
-    switch (severity) {
-      case "Alert":
-        return "bg-red-100 text-red-800";
-      case "Warning":
-        return "bg-yellow-100 text-yellow-800";
-      case "Info":
-        return "bg-blue-100 text-blue-800";
-      default:
-        return "bg-gray-100 text-gray-800";
-    }
-  };
+  const alerts = generateAlerts();
 
-  const getHeartRateColor = (heartRate: number) => {
-    if (heartRate > 140) return "text-red-600";
-    if (heartRate > 120) return "text-yellow-600";
-    if (heartRate < 60) return "text-blue-600";
-    return "text-green-600";
-  };
+  // Filter guests based on selected status
+  const filteredGuests =
+    initialGuestsHealthData?.filter((guest: any) => {
+      if (selectedHealthStatus === "all") return true;
+      return guest.healthStatus.value.toLowerCase() === selectedHealthStatus;
+    }) || [];
 
-  const getStressLevelColor = (stressLevel: string) => {
-    switch (stressLevel) {
-      case "High":
-        return "text-red-600";
-      case "Medium":
-        return "text-yellow-600";
-      case "Low":
-        return "text-green-600";
-      default:
-        return "text-gray-600";
-    }
-  };
-
-  const getColorClasses = (color: string) => {
-    switch (color) {
-      case "blue":
-        return { bg: "bg-blue-100", text: "text-blue-600" };
-      case "green":
-        return { bg: "bg-green-100", text: "text-green-600" };
-      case "yellow":
-        return { bg: "bg-yellow-100", text: "text-yellow-600" };
-      case "red":
-        return { bg: "bg-red-100", text: "text-red-600" };
-      case "purple":
-        return { bg: "bg-purple-100", text: "text-purple-600" };
-      default:
-        return { bg: "bg-gray-100", text: "text-gray-600" };
-    }
-  };
+  // Time range option
 
   return (
     <div className="space-y-6">
@@ -226,33 +278,32 @@ export default function HealthMonitoringClient() {
         {stats.map((stat) => {
           const colorClasses = getColorClasses(stat.color);
           return (
-            <div
-              key={stat.title}
-              className="bg-white rounded-xl p-6 border border-gray-200"
-            >
-              <div className="flex items-center">
-                <div className={`p-2 ${colorClasses.bg} rounded-lg`}>
-                  <stat.icon className={`h-6 w-6 ${colorClasses.text}`} />
+            <Card key={stat.title}>
+              <CardBody>
+                <div className="flex items-center">
+                  <div className={`p-2 ${colorClasses.bg} rounded-lg`}>
+                    <stat.icon className={`h-6 w-6 ${colorClasses.text}`} />
+                  </div>
+                  <div className="ml-4">
+                    <p className="text-sm font-medium text-gray-600">
+                      {stat.title}
+                    </p>
+                    <p className="text-2xl font-bold text-gray-900">
+                      {stat.value}
+                    </p>
+                    <p
+                      className={`text-sm ${
+                        stat.changeType === "positive"
+                          ? "text-green-600"
+                          : "text-red-600"
+                      }`}
+                    >
+                      {stat.change} from yesterday
+                    </p>
+                  </div>
                 </div>
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">
-                    {stat.title}
-                  </p>
-                  <p className="text-2xl font-bold text-gray-900">
-                    {stat.value}
-                  </p>
-                  <p
-                    className={`text-sm ${
-                      stat.changeType === "positive"
-                        ? "text-green-600"
-                        : "text-red-600"
-                    }`}
-                  >
-                    {stat.change} from yesterday
-                  </p>
-                </div>
-              </div>
-            </div>
+              </CardBody>
+            </Card>
           );
         })}
       </div>
@@ -261,41 +312,57 @@ export default function HealthMonitoringClient() {
       <div className="bg-white rounded-xl p-6 border border-gray-200">
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="flex-1 relative">
-            <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-            <input
+            <Input
               type="text"
               placeholder="Search guests..."
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              startContent={
+                <MagnifyingGlassIcon className="h-5 w-5 text-gray-400" />
+              }
+              className="w-full"
+              size="sm"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
 
-          <select
-            value={selectedTimeRange}
-            onChange={(e) => setSelectedTimeRange(e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          <Select
+            selectedKeys={[selectedTimeRange]}
+            onSelectionChange={(keys) =>
+              setSelectedTimeRange(Array.from(keys)[0] as string)
+            }
+            size="sm"
+            className="min-w-[140px]"
           >
-            <option value="today">Today</option>
-            <option value="week">This Week</option>
-            <option value="month">This Month</option>
-            <option value="year">This Year</option>
-          </select>
+            {timeRangeOptions.map((option) => (
+              <SelectItem key={option.key} textValue={option.label}>
+                {option.label}
+              </SelectItem>
+            ))}
+          </Select>
 
-          <select
-            value={selectedHealthStatus}
-            onChange={(e) => setSelectedHealthStatus(e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          <Select
+            selectedKeys={[selectedHealthStatus]}
+            onSelectionChange={(keys) =>
+              setSelectedHealthStatus(Array.from(keys)[0] as string)
+            }
+            size="sm"
+            className="min-w-[140px]"
           >
-            <option value="all">All Status</option>
-            <option value="excellent">Excellent</option>
-            <option value="normal">Normal</option>
-            <option value="warning">Warning</option>
-            <option value="alert">Alert</option>
-          </select>
+            {healthStatusOptions.map((option) => (
+              <SelectItem key={option.key} textValue={option.label}>
+                {option.label}
+              </SelectItem>
+            ))}
+          </Select>
 
-          <button className="flex items-center px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">
-            <FunnelIcon className="h-5 w-5 text-gray-400 mr-2" />
+          <Button
+            size="sm"
+            variant="bordered"
+            startContent={<FunnelIcon className="h-5 w-5" />}
+            className="px-4"
+          >
             Filter
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -337,21 +404,18 @@ export default function HealthMonitoringClient() {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {healthData.map((guest) => (
+              {filteredGuests.map((guest: any) => (
                 <tr key={guest.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
                       <div className="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center">
                         <span className="text-sm font-medium text-gray-700">
-                          {guest.guestName
-                            .split(" ")
-                            .map((n) => n[0])
-                            .join("")}
+                          {guest.initials}
                         </span>
                       </div>
                       <div className="ml-4">
                         <div className="text-sm font-medium text-gray-900">
-                          {guest.guestName}
+                          {guest.fullName}
                         </div>
                       </div>
                     </div>
@@ -362,34 +426,34 @@ export default function HealthMonitoringClient() {
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span
                       className={`text-sm font-medium ${getHeartRateColor(
-                        guest.heartRate
+                        guest.heartRate.value
                       )}`}
                     >
-                      {guest.heartRate} bpm
+                      {guest.heartRate.value} {guest.heartRate.unit}
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                     {guest.bloodPressure}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {guest.temperature}°F
+                    {guest.temperature.value} {guest.temperature.unit}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span
                       className={`text-sm font-medium ${getStressLevelColor(
-                        guest.stressLevel
+                        guest.stressLevel.value
                       )}`}
                     >
-                      {guest.stressLevel}
+                      {guest.stressLevel.value}
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span
                       className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(
-                        guest.status
+                        guest.healthStatus.value
                       )}`}
                     >
-                      {guest.status}
+                      {guest.healthStatus.value}
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
@@ -498,57 +562,59 @@ export default function HealthMonitoringClient() {
         {/* Health Score Distribution */}
         <div className="bg-white rounded-xl p-6 border border-gray-200">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">
-            Health Score Distribution
+            Health Status Distribution
           </h3>
           <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600">Excellent (90-100)</span>
-              <div className="flex items-center">
-                <div className="w-32 bg-gray-200 rounded-full h-2 mr-2">
-                  <div
-                    className="bg-green-600 h-2 rounded-full"
-                    style={{ width: "45%" }}
-                  ></div>
-                </div>
-                <span className="text-sm font-medium text-gray-900">45%</span>
-              </div>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600">Good (80-89)</span>
-              <div className="flex items-center">
-                <div className="w-32 bg-gray-200 rounded-full h-2 mr-2">
-                  <div
-                    className="bg-blue-600 h-2 rounded-full"
-                    style={{ width: "35%" }}
-                  ></div>
-                </div>
-                <span className="text-sm font-medium text-gray-900">35%</span>
-              </div>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600">Fair (70-79)</span>
-              <div className="flex items-center">
-                <div className="w-32 bg-gray-200 rounded-full h-2 mr-2">
-                  <div
-                    className="bg-yellow-600 h-2 rounded-full"
-                    style={{ width: "15%" }}
-                  ></div>
-                </div>
-                <span className="text-sm font-medium text-gray-900">15%</span>
-              </div>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600">Poor (less than 70)</span>
-              <div className="flex items-center">
-                <div className="w-32 bg-gray-200 rounded-full h-2 mr-2">
-                  <div
-                    className="bg-red-600 h-2 rounded-full"
-                    style={{ width: "5%" }}
-                  ></div>
-                </div>
-                <span className="text-sm font-medium text-gray-900">5%</span>
-              </div>
-            </div>
+            {(() => {
+              if (!initialGuestsHealthData) return null;
+
+              const statusCounts = initialGuestsHealthData.reduce(
+                (acc: any, guest: any) => {
+                  const status = guest.healthStatus.value;
+                  acc[status] = (acc[status] || 0) + 1;
+                  return acc;
+                },
+                {}
+              );
+
+              const total = initialGuestsHealthData.length;
+
+              return Object.entries(statusCounts).map(
+                ([status, count]: [string, any]) => {
+                  const percentage = Math.round((count / total) * 100);
+                  const color =
+                    status === "Excellent"
+                      ? "bg-green-600"
+                      : status === "Good"
+                        ? "bg-blue-600"
+                        : status === "Fair"
+                          ? "bg-yellow-600"
+                          : status === "Poor"
+                            ? "bg-orange-600"
+                            : "bg-red-600";
+
+                  return (
+                    <div
+                      key={status}
+                      className="flex items-center justify-between"
+                    >
+                      <span className="text-sm text-gray-600">{status}</span>
+                      <div className="flex items-center">
+                        <div className="w-32 bg-gray-200 rounded-full h-2 mr-2">
+                          <div
+                            className={`${color} h-2 rounded-full`}
+                            style={{ width: `${percentage}%` }}
+                          ></div>
+                        </div>
+                        <span className="text-sm font-medium text-gray-900">
+                          {percentage}%
+                        </span>
+                      </div>
+                    </div>
+                  );
+                }
+              );
+            })()}
           </div>
         </div>
 

@@ -10,6 +10,7 @@ const {
   getGuestMetrics,
   addGuestMetric,
   getLatestGuestsMetrics,
+  getLatestHealthMetrics,
 } = require("../controllers/guestController");
 
 const router = express.Router();
@@ -149,5 +150,6 @@ router.post("/:id/metrics", auth, addGuestMetric);
 
 router.get("/metrics/latest", getLatestGuestsMetrics);
 
+router.get("/health/latest", getLatestHealthMetrics);
 
 module.exports = router;

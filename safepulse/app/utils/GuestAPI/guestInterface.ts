@@ -24,3 +24,19 @@ export interface PaginationInfo {
   nextPage: number | null;
   prevPage: number | null;
 }
+
+export type GuestHealth = {
+  id: number;
+  fullName: string;
+  age: number;
+  healthScore: number;
+  lastRide: string;
+  totalTimeSpent: string;
+  email: string;
+  gender: string;
+  latestHeartRate: number | null;
+  latestBloodPressure: string | null;
+  latestSteps: number | null;
+  latestCalories: number | null;
+  safeHeartRateRange: string;
+}
