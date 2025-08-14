@@ -30,6 +30,8 @@ import {
   getStressLevelColor,
   getStatusColor,
   getAlertSeverityColor,
+  calculateStats,
+  generateAlerts,
 } from "./commonHealthFunc";
 
 export default function HealthMonitoringClient({
@@ -43,41 +45,8 @@ export default function HealthMonitoringClient({
   const [selectedHealthStatus, setSelectedHealthStatus] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   // Calculate stats from the actual data
-  const calculateStats = () => {
-    if (!initialGuestsHealthData || initialGuestsHealthData.length === 0) {
-      return {
-        totalMonitored: 0,
-        normalStatus: 0,
-        activeAlerts: 0,
-        avgHealthScore: 0,
-      };
-    }
 
-    const totalMonitored = initialGuestsHealthData.length;
-    const normalStatus = initialGuestsHealthData.filter(
-      (guest: any) =>
-        guest.healthStatus.value === "Excellent" ||
-        guest.healthStatus.value === "Good"
-    ).length;
-
-    const activeAlerts = initialGuestsHealthData.filter(
-      (guest: any) =>
-        guest.healthStatus.value === "Critical" ||
-        guest.healthStatus.value === "Poor"
-    ).length;
-
-    // Calculate average health score (simplified - you can enhance this)
-    const avgHealthScore = Math.round((normalStatus / totalMonitored) * 100);
-
-    return {
-      totalMonitored,
-      normalStatus,
-      activeAlerts,
-      avgHealthScore,
-    };
-  };
-
-  const statsData = calculateStats();
+  const statsData = calculateStats(initialGuestsHealthData);
 
   const stats = [
     {
@@ -114,61 +83,7 @@ export default function HealthMonitoringClient({
     },
   ];
 
-  // Generate alerts from health data
-  const generateAlerts = () => {
-    if (!initialGuestsHealthData) return [];
-
-    const alerts: any[] = [];
-
-    initialGuestsHealthData.forEach((guest: any) => {
-      // Heart rate alerts
-      if (guest.heartRate.value > 120) {
-        alerts.push({
-          id: `hr-${guest.id}`,
-          guestName: guest.fullName,
-          type: "High Heart Rate",
-          severity: guest.heartRate.value > 140 ? "Alert" : "Warning",
-          message: `Heart rate elevated to ${guest.heartRate.value} bpm`,
-          timestamp: guest.lastCheck,
-          status: "Active",
-        });
-      }
-
-      // Stress level alerts
-      if (
-        guest.stressLevel.value === "High" ||
-        guest.stressLevel.value === "Very High" ||
-        guest.stressLevel.value === "Extreme"
-      ) {
-        alerts.push({
-          id: `stress-${guest.id}`,
-          guestName: guest.fullName,
-          type: "High Stress",
-          severity: guest.stressLevel.value === "Extreme" ? "Alert" : "Warning",
-          message: `Stress level detected as ${guest.stressLevel.value}`,
-          timestamp: guest.lastCheck,
-          status: "Active",
-        });
-      }
-
-      // Critical health status
-      if (guest.healthStatus.value === "Critical") {
-        alerts.push({
-          id: `critical-${guest.id}`,
-          guestName: guest.fullName,
-          type: "Critical Health",
-          severity: "Alert",
-          message: `Health status is critical - requires immediate attention`,
-          timestamp: guest.lastCheck,
-          status: "Active",
-        });
-      }
-    });
-
-    return alerts.slice(0, 5); // Limit to 5 most recent alerts
-  };
-
-  const alerts = generateAlerts();
+  const alerts = generateAlerts(initialGuestsHealthData);
 
   // Filter guests based on selected status
   const filteredGuests =
