@@ -1,6 +1,9 @@
 // safepulse/redux/slices/guestSlice.ts
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
-import { GuestHealth, PaginationInfo } from "@/app/utils/GuestAPI/guestInterface";
+import {
+  GuestHealth,
+  PaginationInfo,
+} from "@/app/utils/GuestAPI/guestInterface";
 import { RootState } from "../store/store";
 
 // Define the state interface
@@ -34,11 +37,11 @@ const initialState: GuestHealthState = {
 
 // Async thunk for fetching guests
 export const fetchGuestsHealth = createAsyncThunk(
-  "guest/fetchGuestsHealth",
+  "guestHealth/fetchGuestsHealth",
   async (page: number = 1, { rejectWithValue }) => {
     try {
       const response = await fetch(
-        `/api/service?endpoint=/guests/metrics/latest&params=${JSON.stringify({
+        `/api/service?endpoint=/guests/health/latest&params=${JSON.stringify({
           page: page.toString(),
           limit: "50",
         })}`,
@@ -118,16 +121,25 @@ const guestHealthSlice = createSlice({
 });
 
 // Export actions
-export const { setSearchTerm, setCurrentPage, clearError, resetGuestHealthState } =
-  guestHealthSlice.actions;
+export const {
+  setSearchTerm,
+  setCurrentPage,
+  clearError,
+  resetGuestHealthState,
+} = guestHealthSlice.actions;
 
 // Export selectors
-export const selectGuestsHealth = (state: RootState) => state.guestHealth.guests;
-export const selectPaginationHealth = (state: RootState) => state.guestHealth.pagination;
-export const selectLoadingHealth = (state: RootState) => state.guestHealth.loading;
+export const selectGuestsHealth = (state: RootState) =>
+  state.guestHealth.guests;
+export const selectPaginationHealth = (state: RootState) =>
+  state.guestHealth.pagination;
+export const selectLoadingHealth = (state: RootState) =>
+  state.guestHealth.loading;
 export const selectErrorHealth = (state: RootState) => state.guestHealth.error;
-export const selectCurrentPageHealth = (state: RootState) => state.guestHealth.currentPage;
-export const selectSearchTermHealth = (state: RootState) => state.guestHealth.searchTerm;
+export const selectCurrentPageHealth = (state: RootState) =>
+  state.guestHealth.currentPage;
+export const selectSearchTermHealth = (state: RootState) =>
+  state.guestHealth.searchTerm;
 
 // Export filtered guests selector
 export const selectFilteredGuestsHealth = (state: RootState) => {

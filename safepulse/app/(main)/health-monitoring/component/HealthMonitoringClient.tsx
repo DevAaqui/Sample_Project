@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   HeartIcon,
   MagnifyingGlassIcon,
@@ -33,6 +33,29 @@ import {
   calculateStats,
   generateAlerts,
 } from "./commonHealthFunc";
+import HealthMonitoringTable from "./HealthMonitoringTable";
+import { useAppDispatch, useAppSelector } from "@/redux/reduxHooks/reduxHook";
+import {
+  fetchGuestsHealth,
+  selectCurrentPageHealth,
+  selectErrorHealth,
+  selectFilteredGuestsHealth,
+  selectLoadingHealth,
+  selectPaginationHealth,
+  selectSearchTermHealth,
+  setCurrentPage,
+} from "@/redux/slices/guestsHealthSlice";
+import {
+  getCoreRowModel,
+  getSortedRowModel,
+  getFilteredRowModel,
+  useReactTable,
+  SortingState,
+  flexRender,
+} from "@tanstack/react-table";
+import { columns, HealthData } from "./columns";
+import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
+import { fetchGuests } from "@/redux/slices/guestSlice";
 
 export default function HealthMonitoringClient({
   initialGuestsHealthData,
@@ -41,10 +64,24 @@ export default function HealthMonitoringClient({
   initialGuestsHealthData: any;
   initialPaginationHealthData: any;
 }) {
+  const dispatch = useAppDispatch();
+  const [sorting, setSorting] = useState<SortingState>([]);
   const [selectedTimeRange, setSelectedTimeRange] = useState("today");
   const [selectedHealthStatus, setSelectedHealthStatus] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
-  // Calculate stats from the actual data
+  const guestsHealth = useAppSelector(selectFilteredGuestsHealth);
+  const pagination = useAppSelector(selectPaginationHealth);
+  const error = useAppSelector(selectErrorHealth);
+  const currentPage = useAppSelector(selectCurrentPageHealth);
+  const searchTerm = useAppSelector(selectSearchTermHealth);
+  const isLoading = useAppSelector(selectLoadingHealth);
+
+  const fetchPageData = useMemo(() => {
+    return async () => {
+      console.log("Auto-refresh fetching page:", currentPage);
+      await dispatch(fetchGuestsHealth(currentPage));
+    };
+  }, [dispatch, currentPage]);
 
   const statsData = calculateStats(initialGuestsHealthData);
 
@@ -85,14 +122,35 @@ export default function HealthMonitoringClient({
 
   const alerts = generateAlerts(initialGuestsHealthData);
 
-  // Filter guests based on selected status
-  const filteredGuests =
-    initialGuestsHealthData?.filter((guest: any) => {
-      if (selectedHealthStatus === "all") return true;
-      return guest.healthStatus.value.toLowerCase() === selectedHealthStatus;
-    }) || [];
+  const table = useReactTable({
+    data: guestsHealth as unknown as HealthData[],
+    columns,
+    getCoreRowModel: getCoreRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    onSortingChange: setSorting,
+    state: {
+      sorting,
+    },
+  });
 
-  // Time range option
+  const handlePageChange = (page: number) => {
+    dispatch(setCurrentPage(page));
+    dispatch(fetchGuestsHealth(page));
+  };
+
+  useEffect(() => {
+    if (initialGuestsHealthData.length > 0) {
+      // Dispatch an action to set initial data
+      dispatch({
+        type: "guestHealth/fetchGuestsHealth/fulfilled",
+        payload: {
+          guests: initialGuestsHealthData,
+          pagination: initialPaginationHealthData,
+        },
+      });
+    }
+  }, [dispatch, initialGuestsHealthData, initialPaginationHealthData]);
 
   return (
     <div className="space-y-6">
@@ -142,8 +200,9 @@ export default function HealthMonitoringClient({
       {/* Filters and Controls */}
       <div className="bg-white rounded-xl p-6 border border-gray-200">
         <div className="flex flex-col sm:flex-row gap-4">
-          <div className="flex-1 relative">
+          <div className="w-full">
             <Input
+              aria-label="Search guests"
               type="text"
               placeholder="Search guests..."
               startContent={
@@ -157,6 +216,7 @@ export default function HealthMonitoringClient({
           </div>
 
           <Select
+            aria-label="Select time range"
             selectedKeys={[selectedTimeRange]}
             onSelectionChange={(keys) =>
               setSelectedTimeRange(Array.from(keys)[0] as string)
@@ -172,6 +232,7 @@ export default function HealthMonitoringClient({
           </Select>
 
           <Select
+            aria-label="Select health status"
             selectedKeys={[selectedHealthStatus]}
             onSelectionChange={(keys) =>
               setSelectedHealthStatus(Array.from(keys)[0] as string)
@@ -198,113 +259,167 @@ export default function HealthMonitoringClient({
       </div>
 
       {/* Health Monitoring Table */}
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-900">
-            Guest Health Status
-          </h3>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Guest
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Age
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Heart Rate
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Blood Pressure
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Temperature
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Stress Level
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Last Check
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {filteredGuests.map((guest: any) => (
-                <tr key={guest.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap">
+      <div className="overflow-x-auto">
+        <table className="min-w-full divide-y divide-gray-200">
+          <thead className="bg-gray-50">
+            {table.getHeaderGroups().map((headerGroup) => (
+              <tr key={headerGroup.id}>
+                {headerGroup.headers.map((header) => (
+                  <th
+                    key={header.id}
+                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                    onClick={header.column.getToggleSortingHandler()}
+                  >
                     <div className="flex items-center">
-                      <div className="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center">
-                        <span className="text-sm font-medium text-gray-700">
-                          {guest.initials}
+                      {flexRender(
+                        header.column.columnDef.header,
+                        header.getContext()
+                      )}
+                      {header.column.getCanSort() && (
+                        <span className="ml-1">
+                          {{
+                            asc: " 🔼",
+                            desc: " 🔽",
+                          }[header.column.getIsSorted() as string] ?? " ↕️"}
                         </span>
-                      </div>
-                      <div className="ml-4">
-                        <div className="text-sm font-medium text-gray-900">
-                          {guest.fullName}
-                        </div>
-                      </div>
+                      )}
                     </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {guest.age}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span
-                      className={`text-sm font-medium ${getHeartRateColor(
-                        guest.heartRate.value
-                      )}`}
-                    >
-                      {guest.heartRate.value} {guest.heartRate.unit}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {guest.bloodPressure}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {guest.temperature.value} {guest.temperature.unit}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span
-                      className={`text-sm font-medium ${getStressLevelColor(
-                        guest.stressLevel.value
-                      )}`}
-                    >
-                      {guest.stressLevel.value}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span
-                      className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(
-                        guest.healthStatus.value
-                      )}`}
-                    >
-                      {guest.healthStatus.value}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {(() => {
-                      const date = new Date(guest.lastCheck);
-                      if (isNaN(date.getTime())) return "Invalid Date";
-                      const hours = date.getHours().toString().padStart(2, "0");
-                      const minutes = date
-                        .getMinutes()
-                        .toString()
-                        .padStart(2, "0");
-                      return `${hours}:${minutes}`;
-                    })()}
-                  </td>
+                  </th>
+                ))}
+              </tr>
+            ))}
+          </thead>
+          <tbody className="bg-white divide-y divide-gray-200">
+            {isLoading ? (
+              <tr>
+                <td colSpan={6} className="px-6 py-4 text-center text-gray-500">
+                  <div className="flex items-center justify-center">
+                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+                    <span className="ml-2">Loading guests...</span>
+                  </div>
+                </td>
+              </tr>
+            ) : table.getRowModel().rows.length === 0 ? (
+              <tr>
+                <td colSpan={6} className="px-6 py-4 text-center text-gray-500">
+                  No guests found
+                </td>
+              </tr>
+            ) : (
+              table.getRowModel().rows.map((row) => (
+                <tr key={row.id} className="hover:bg-gray-50">
+                  {row.getVisibleCells().map((cell) => (
+                    <td key={cell.id} className="px-6 py-4 whitespace-nowrap">
+                      {flexRender(
+                        cell.column.columnDef.cell,
+                        cell.getContext()
+                      )}
+                    </td>
+                  ))}
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              ))
+            )}
+          </tbody>
+        </table>
       </div>
+
+      {/* Pagination */}
+      {pagination && (
+        <div className="px-6 py-4 border-t border-gray-200">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center text-sm text-gray-700">
+              <span>
+                Showing {(pagination.currentPage - 1) * pagination.limit + 1} to{" "}
+                {Math.min(
+                  pagination.currentPage * pagination.limit,
+                  pagination.totalCount
+                )}{" "}
+                of {pagination.totalCount} results
+              </span>
+            </div>
+
+            <div className="flex items-center space-x-2">
+              <Button
+                size="sm"
+                variant="bordered"
+                isDisabled={!pagination.hasPrevPage || isLoading}
+                onClick={() => handlePageChange(pagination.currentPage - 1)}
+                startContent={<ChevronLeftIcon className="w-4 h-4" />}
+              >
+                Previous
+              </Button>
+
+              <div className="flex items-center space-x-1">
+                {Array.from(
+                  { length: Math.min(5, pagination.totalPages) },
+                  (_, i) => {
+                    const pageNum = i + 1;
+                    return (
+                      <Button
+                        key={pageNum}
+                        size="sm"
+                        variant={
+                          pageNum === pagination.currentPage
+                            ? "solid"
+                            : "bordered"
+                        }
+                        onClick={() => handlePageChange(pageNum)}
+                        className="min-w-[40px]"
+                        isDisabled={isLoading}
+                      >
+                        {pageNum}
+                      </Button>
+                    );
+                  }
+                )}
+
+                {pagination.totalPages > 5 && (
+                  <>
+                    {pagination.currentPage > 3 && (
+                      <span className="px-2 text-gray-500">...</span>
+                    )}
+                    {pagination.currentPage > 3 && (
+                      <Button
+                        size="sm"
+                        variant="bordered"
+                        onClick={() => handlePageChange(pagination.currentPage)}
+                        className="min-w-[40px]"
+                        isDisabled={isLoading}
+                      >
+                        {pagination.currentPage}
+                      </Button>
+                    )}
+                    {pagination.currentPage < pagination.totalPages - 2 && (
+                      <span className="px-2 text-gray-500">...</span>
+                    )}
+                    {pagination.currentPage < pagination.totalPages - 2 && (
+                      <Button
+                        size="sm"
+                        variant="bordered"
+                        onClick={() => handlePageChange(pagination.totalPages)}
+                        className="min-w-[40px]"
+                        isDisabled={isLoading}
+                      >
+                        {pagination.totalPages}
+                      </Button>
+                    )}
+                  </>
+                )}
+              </div>
+
+              <Button
+                size="sm"
+                variant="bordered"
+                isDisabled={!pagination.hasNextPage || isLoading}
+                onClick={() => handlePageChange(pagination.currentPage + 1)}
+                endContent={<ChevronRightIcon className="w-4 h-4" />}
+              >
+                Next
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Health Alerts */}
       <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
