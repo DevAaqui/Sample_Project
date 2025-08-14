@@ -149,9 +149,8 @@ export const selectFilteredGuestsHealth = (state: RootState) => {
   if (!searchTerm) return guests;
 
   return guests.filter(
-    (guest) =>
-      guest.fullName.toLowerCase().includes(searchTerm) ||
-      guest.email.toLowerCase().includes(searchTerm)
+    (guest) => guest.fullName.toLowerCase().includes(searchTerm)
+    // guest.email.toLowerCase().includes(searchTerm)
   );
 };
 

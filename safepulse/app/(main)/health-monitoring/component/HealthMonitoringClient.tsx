@@ -44,6 +44,7 @@ import {
   selectPaginationHealth,
   selectSearchTermHealth,
   setCurrentPage,
+  setSearchTerm,
 } from "@/redux/slices/guestsHealthSlice";
 import {
   getCoreRowModel,
@@ -83,7 +84,7 @@ export default function HealthMonitoringClient({
     };
   }, [dispatch, currentPage]);
 
-  const statsData = calculateStats(initialGuestsHealthData);
+  const statsData = calculateStats(guestsHealth);
 
   const stats = [
     {
@@ -120,7 +121,7 @@ export default function HealthMonitoringClient({
     },
   ];
 
-  const alerts = generateAlerts(initialGuestsHealthData);
+  const alerts = generateAlerts(guestsHealth);
 
   const table = useReactTable({
     data: guestsHealth as unknown as HealthData[],
@@ -133,6 +134,10 @@ export default function HealthMonitoringClient({
       sorting,
     },
   });
+
+  const handleSearchChange = (value: string) => {
+    dispatch(setSearchTerm(value));
+  };
 
   const handlePageChange = (page: number) => {
     dispatch(setCurrentPage(page));
@@ -210,9 +215,9 @@ export default function HealthMonitoringClient({
               }
               className="w-full"
               size="sm"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
+              value={searchTerm}
+              onChange={(e) => handleSearchChange(e.target.value)}
+              />
           </div>
 
           <Select
