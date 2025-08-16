@@ -1,38 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import {
-  HeartIcon,
-  MagnifyingGlassIcon,
-  FunnelIcon,
-  ExclamationTriangleIcon,
-  CheckCircleIcon,
-  ClockIcon,
-  UserGroupIcon,
-  ChartBarIcon,
-  ArrowTrendingUpIcon,
-  ShieldCheckIcon,
-} from "@heroicons/react/24/outline";
-import {
-  Card,
-  CardBody,
-  CardHeader,
-  Input,
-  Select,
-  SelectItem,
-  Button,
-} from "@heroui/react";
-import {
-  timeRangeOptions,
-  healthStatusOptions,
-  getColorClasses,
-  getHeartRateColor,
-  getStressLevelColor,
-  getStatusColor,
-  getAlertSeverityColor,
-  calculateStats,
-  generateAlerts,
-} from "./commonHealthFunc";
+
+import { calculateStats, generateAlerts } from "./commonHealthFunc";
 import { useAppDispatch, useAppSelector } from "@/redux/reduxHooks/reduxHook";
 import {
   fetchGuestsHealth,
@@ -54,7 +24,6 @@ import {
   flexRender,
 } from "@tanstack/react-table";
 import { columns, HealthData } from "./columns";
-import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
 import HealthMonitoringCharts from "./HealthMonitorCharts";
 import HealthAlertsTable from "./AlertTable";
 import HealthStatsCards from "./StatsCard";
@@ -101,8 +70,7 @@ export default function HealthMonitoringClient({
   });
 
   const handleSearchChange = (value: string) => {
-    console.log("Search value:", value);
-    dispatch(setSearchTerm(value));
+    dispatch(setSearchTerm(value)); // We can use it later on
   };
 
   const handlePageChange = (page: number) => {
