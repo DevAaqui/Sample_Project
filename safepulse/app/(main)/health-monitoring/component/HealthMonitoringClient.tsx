@@ -72,7 +72,6 @@ export default function HealthMonitoringClient({
   const [sorting, setSorting] = useState<SortingState>([]);
   const [selectedTimeRange, setSelectedTimeRange] = useState("today");
   const [selectedHealthStatus, setSelectedHealthStatus] = useState("all");
-  const [searchQuery, setSearchQuery] = useState("");
   const guestsHealth = useAppSelector(selectFilteredGuestsHealth);
   const pagination = useAppSelector(selectPaginationHealth);
   const error = useAppSelector(selectErrorHealth);
@@ -102,6 +101,7 @@ export default function HealthMonitoringClient({
   });
 
   const handleSearchChange = (value: string) => {
+    console.log("Search value:", value);
     dispatch(setSearchTerm(value));
   };
 
@@ -138,10 +138,10 @@ export default function HealthMonitoringClient({
 
       {/* Filters and Controls */}
       <HealthFilters
-        searchQuery={searchQuery}
+        searchQuery={searchTerm}
         selectedTimeRange={selectedTimeRange}
         selectedHealthStatus={selectedHealthStatus}
-        onSearchChange={setSearchQuery}
+        onSearchChange={handleSearchChange}
         onTimeRangeChange={setSelectedTimeRange}
         onHealthStatusChange={setSelectedHealthStatus}
         onFilterClick={() => {

@@ -75,6 +75,7 @@ const guestHealthSlice = createSlice({
     // Set search term
     setSearchTerm: (state, action: PayloadAction<string>) => {
       state.searchTerm = action.payload;
+      console.log("Search term:", state.searchTerm);
       state.currentPage = 1; // Reset to first page when searching
     },
 

@@ -161,9 +161,7 @@ export default function HealthMonitoringTable({
                         <Button
                           size="sm"
                           variant="bordered"
-                          onClick={() =>
-                            onPageChange(pagination.currentPage)
-                          }
+                          onClick={() => onPageChange(pagination.currentPage)}
                           className="min-w-[40px]"
                           isDisabled={isLoading}
                         >
@@ -178,9 +176,7 @@ export default function HealthMonitoringTable({
                           key={pagination.totalPages}
                           size="sm"
                           variant="bordered"
-                          onClick={() =>
-                            onPageChange(pagination.totalPages)
-                          }
+                          onClick={() => onPageChange(pagination.totalPages)}
                           className="min-w-[40px]"
                           isDisabled={isLoading}
                         >

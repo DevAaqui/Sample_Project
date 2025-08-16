@@ -10,6 +10,8 @@ import {
 } from "@heroui/react";
 import { MagnifyingGlassIcon, FunnelIcon } from "@heroicons/react/24/outline";
 import { timeRangeOptions, healthStatusOptions } from "./commonHealthFunc";
+import { setSearchTerm } from "@/redux/slices/guestsHealthSlice";
+import { useAppDispatch } from "@/redux/reduxHooks/reduxHook";
 
 interface HealthFiltersProps {
   searchQuery: string;
@@ -30,6 +32,7 @@ export default function HealthFilters({
   onHealthStatusChange,
   onFilterClick,
 }: HealthFiltersProps) {
+  const dispatch = useAppDispatch();
   return (
     <Card className="w-full">
       <CardBody className="p-6">
@@ -45,7 +48,7 @@ export default function HealthFilters({
               className="w-full"
               size="sm"
               value={searchQuery}
-              onChange={(e) => onSearchChange(e.target.value)}
+              onChange={(e) => dispatch(setSearchTerm(e.target.value))}
             />
           </div>
 
