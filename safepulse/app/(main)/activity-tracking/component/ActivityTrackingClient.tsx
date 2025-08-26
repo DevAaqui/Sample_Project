@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   FireIcon,
   MagnifyingGlassIcon,
@@ -20,6 +20,10 @@ import {
   Button,
   Input,
 } from "@heroui/react";
+import {
+  fetchActivityDashboard,
+} from "@/redux/slices/activitySlice";
+import { useAppDispatch, useAppSelector } from "@/redux/reduxHooks/reduxHook";
 
 const getIntensityColor = (intensity: string) => {
   switch (intensity) {
@@ -131,44 +135,70 @@ const activityData = [
   },
 ];
 
+interface ActivityProps {
+  activityCardsData: {
+    activeSessions: number;
+    caloriesBurned: number;
+    peakTime: string;
+    healthAlerts: number;
+  };
+}
+
 export default function ActivityTrackingClient() {
+  const dispatch = useAppDispatch();
   const [selectedTimeRange, setSelectedTimeRange] = useState("today");
   const [selectedActivityType, setSelectedActivityType] = useState("all");
+  const stats = useAppSelector((state) => state.activityTracking.dashboardData);
+  console.log("stats>>>>", stats);
 
-  const stats = [
+  useEffect(() => {
+    dispatch(fetchActivityDashboard());
+  }, []);
+
+  // Create a mapping of icon names to actual icon components
+  const iconMap = {
+    UserGroupIcon,
+    FireIcon,
+    ArrowTrendingUpIcon,
+    ExclamationTriangleIcon,
+    ChartBarIcon,
+  };
+
+  // Transform the Redux data into the format expected by your component
+  const transformedStats = stats ? [
     {
       title: "Active Sessions",
-      value: "1,247",
-      change: "+12%",
-      changeType: "positive",
-      icon: FireIcon,
+      value: stats[0]?.activeSessions?.current?.toLocaleString() || "0",
+      change: `${stats[0]?.activeSessions?.percentageChange || 0}%`,
+      changeType: stats[0]?.activeSessions?.trend || "neutral",
+      icon: UserGroupIcon,
       color: "blue",
     },
     {
       title: "Total Calories Burned",
-      value: "500kcal",
-      change: "+10%",
-      changeType: "positive",
+      value: `${stats[1]?.caloriesBurned?.current || 0}kcal`,
+      change: `${stats[1]?.caloriesBurned?.percentageChange || 0}%`,
+      changeType: stats[1]?.caloriesBurned?.trend || "neutral",
       icon: FireIcon,
       color: "red",
     },
     {
       title: "Peak Activity Time",
-      value: "2:30 PM",
-      change: "-2%",
-      changeType: "negative",
+      value: stats[2]?.peakActivityTime?.current || "N/A",
+      change: `${stats[2]?.peakActivityTime?.percentageChange || 0}%`,
+      changeType: stats[2]?.peakActivityTime?.trend || "neutral",
       icon: ArrowTrendingUpIcon,
       color: "yellow",
     },
     {
       title: "Health Alerts",
-      value: "3",
-      change: "-25%",
-      changeType: "positive",
+      value: stats[3]?.healthAlerts?.current || "0",
+      change: `${stats[3]?.healthAlerts?.percentageChange || 0}%`,
+      changeType: stats[3]?.healthAlerts?.trend || "neutral",
       icon: ExclamationTriangleIcon,
       color: "red",
     },
-  ];
+  ] : [];
 
   return (
     <div className="space-y-6">
@@ -182,34 +212,39 @@ export default function ActivityTrackingClient() {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        {stats.map((stat) => (
-          <Card key={stat.title} className="border border-gray-200">
-            <CardBody className="p-6">
-              <div className="flex items-center">
-                <div className={`p-2 bg-${stat.color}-100 rounded-lg`}>
-                  <stat.icon className={`h-6 w-6 text-${stat.color}-600`} />
+        {transformedStats.map((stat, index) => {
+          const IconComponent = stat.icon; // Get the actual icon component
+
+          return (
+            <Card key={stat.title || index} className="border border-gray-200">
+              <CardBody className="p-6">
+                <div className="flex items-center">
+                  <div className={`p-2 bg-${stat.color}-100 rounded-lg`}>
+                    <IconComponent className={`h-6 w-6 text-${stat.color}-600`} />
+                  </div>
+                  <div className="ml-4">
+                    <p className="text-sm font-medium text-gray-600">
+                      {stat.title}
+                    </p>
+                    <p className="text-2xl font-bold text-gray-900">
+                      {stat.value}
+                    </p>
+                    <p
+                      className={`text-sm ${stat.changeType === "positive"
+                          ? "text-green-600"
+                          : stat.changeType === "negative"
+                            ? "text-red-600"
+                            : "text-gray-600"
+                        }`}
+                    >
+                      {stat.change} from yesterday
+                    </p>
+                  </div>
                 </div>
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">
-                    {stat.title}
-                  </p>
-                  <p className="text-2xl font-bold text-gray-900">
-                    {stat.value}
-                  </p>
-                  <p
-                    className={`text-sm ${
-                      stat.changeType === "positive"
-                        ? "text-green-600"
-                        : "text-red-600"
-                    }`}
-                  >
-                    {stat.change} from yesterday
-                  </p>
-                </div>
-              </div>
-            </CardBody>
-          </Card>
-        ))}
+              </CardBody>
+            </Card>
+          );
+        })}
       </div>
 
       {/* Filters and Controls */}

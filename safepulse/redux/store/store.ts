@@ -5,12 +5,14 @@ import storage from "redux-persist/lib/storage"; // defaults to localStorage
 import guestReducer from "../slices/guestSlice";
 import headerReducer from "../slices/headerSlice";
 import guestHealthReducer from "../slices/guestsHealthSlice";
+import activityTrackingReducer from "../slices/activitySlice";
 
 // Root reducer
 const rootReducer = combineReducers({
   guest: guestReducer,
   header: headerReducer,
   guestHealth: guestHealthReducer,
+  activityTracking: activityTrackingReducer,
 });
 
 // Separate persist config for header with field filtering
@@ -32,6 +34,7 @@ const persistedRootReducer = combineReducers({
   guest: guestReducer,
   header: persistedHeaderReducer,
   guestHealth: guestHealthReducer,
+  activityTracking: activityTrackingReducer,
 });
 
 // Configure store

@@ -72,6 +72,7 @@ const getActiveSessionsCount = async () => {
         : 0;
 
     return {
+      title: "Active Sessions",
       current: activeCount,
       percentageChange: percentageChange,
       trend: percentageChange >= 0 ? "positive" : "negative",
@@ -153,6 +154,7 @@ const getTotalCaloriesBurned = async () => {
         : 0;
 
     return {
+      title: "Total Calories Burned",
       current: currentCalories,
       percentageChange: percentageChange,
       trend: percentageChange >= 0 ? "positive" : "negative",
@@ -256,6 +258,7 @@ const getPeakActivityTime = async () => {
     const percentageChange = yesterdayPeakHour !== peakHour ? -2 : 0; // Simplified calculation
 
     return {
+      title: "Peak Activity Time",
       current: peakTime,
       percentageChange: percentageChange.toString(),
       trend: percentageChange >= 0 ? "positive" : "negative",
@@ -337,6 +340,7 @@ const getHealthAlertsCount = async () => {
         : 0;
 
     return {
+      title: "Health Alerts",
       current: currentAlerts,
       percentageChange: percentageChange,
       trend: percentageChange <= 0 ? "positive" : "negative", // Fewer alerts is better
@@ -361,12 +365,7 @@ const getActivityTrackingDashboard = async () => {
         getHealthAlertsCount(),
       ]);
 
-    return {
-      activeSessions,
-      caloriesBurned,
-      peakActivityTime: peakTime,
-      healthAlerts,
-    };
+    return [activeSessions, caloriesBurned, peakTime, healthAlerts];
   } catch (error) {
     console.error("Error getting activity tracking dashboard:", error);
     throw error;
