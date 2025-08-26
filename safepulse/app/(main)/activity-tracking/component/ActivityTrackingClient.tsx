@@ -213,7 +213,7 @@ export default function ActivityTrackingClient() {
       </div>
 
       {/* Filters and Controls */}
-      {/* <Card className="border border-gray-200">
+      <Card className="border border-gray-200">
         <CardBody className="p-6">
           <div className="flex flex-col sm:flex-row gap-4">
             <Input
@@ -265,7 +265,7 @@ export default function ActivityTrackingClient() {
             </Button>
           </div>
         </CardBody>
-      </Card> */}
+      </Card>
 
       {/* Activity Timeline */}
       <Card className="border border-gray-200">

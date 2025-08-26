@@ -37,6 +37,7 @@ app.use("/api/auth", require("./routes/auth"));
 app.use("/api/users", require("./routes/users"));
 app.use("/api/guests", require("./routes/guests"));
 app.use("/api/rides", require("./routes/rides"));
+app.use("/api/activity-tracking", require("./routes/activityTrack"));
 
 // Health check endpoint
 app.get("/health", (req, res) => {
