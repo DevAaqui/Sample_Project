@@ -21,87 +21,119 @@ import {
   Input,
 } from "@heroui/react";
 
+const getIntensityColor = (intensity: string) => {
+  switch (intensity) {
+    case "High":
+      return "bg-red-100 text-red-800";
+    case "Medium":
+      return "bg-yellow-100 text-yellow-800";
+    case "Low":
+      return "bg-green-100 text-green-800";
+    default:
+      return "bg-gray-100 text-gray-800";
+  }
+};
+
+const getStatusColor = (status: string) => {
+  switch (status) {
+    case "Active":
+      return "bg-green-100 text-green-800";
+    case "Completed":
+      return "bg-blue-100 text-blue-800";
+    case "Paused":
+      return "bg-yellow-100 text-yellow-800";
+    default:
+      return "bg-gray-100 text-gray-800";
+  }
+};
+
+const getHealthStatusColor = (heartRate: number) => {
+  if (heartRate > 140) return "text-red-600";
+  if (heartRate > 120) return "text-yellow-600";
+  return "text-green-600";
+};
+
+const activityData = [
+  {
+    id: 1,
+    guestName: "John Smith",
+    activityType: "Ride",
+    rideName: "Roller Coaster A",
+    duration: "15m",
+    intensity: "High",
+    healthMetrics: {
+      heartRate: 145,
+      bloodPressure: "120/80",
+      stressLevel: "Medium",
+    },
+    timestamp: "2024-01-15 14:30",
+    status: "Completed",
+  },
+  {
+    id: 2,
+    guestName: "Sarah Johnson",
+    activityType: "Rest",
+    rideName: "Rest Area",
+    duration: "45m",
+    intensity: "Low",
+    healthMetrics: {
+      heartRate: 72,
+      bloodPressure: "110/70",
+      stressLevel: "Low",
+    },
+    timestamp: "2024-01-15 14:15",
+    status: "Active",
+  },
+  {
+    id: 3,
+    guestName: "Mike Davis",
+    activityType: "Ride",
+    rideName: "Water Slide",
+    duration: "8m",
+    intensity: "Medium",
+    healthMetrics: {
+      heartRate: 125,
+      bloodPressure: "118/78",
+      stressLevel: "Medium",
+    },
+    timestamp: "2024-01-15 14:00",
+    status: "Completed",
+  },
+  {
+    id: 4,
+    guestName: "Emily Wilson",
+    activityType: "Ride",
+    rideName: "Ferris Wheel",
+    duration: "12m",
+    intensity: "Low",
+    healthMetrics: {
+      heartRate: 85,
+      bloodPressure: "105/65",
+      stressLevel: "Low",
+    },
+    timestamp: "2024-01-15 13:45",
+    status: "Completed",
+  },
+  {
+    id: 5,
+    guestName: "David Brown",
+    activityType: "Ride",
+    rideName: "Roller Coaster B",
+    duration: "18m",
+    intensity: "High",
+    healthMetrics: {
+      heartRate: 155,
+      bloodPressure: "135/85",
+      stressLevel: "High",
+    },
+    timestamp: "2024-01-15 13:30",
+    status: "Completed",
+  },
+];
+
 export default function ActivityTrackingClient() {
   const [selectedTimeRange, setSelectedTimeRange] = useState("today");
   const [selectedActivityType, setSelectedActivityType] = useState("all");
-
-  const activityData = [
-    {
-      id: 1,
-      guestName: "John Smith",
-      activityType: "Ride",
-      rideName: "Roller Coaster A",
-      duration: "15m",
-      intensity: "High",
-      healthMetrics: {
-        heartRate: 145,
-        bloodPressure: "120/80",
-        stressLevel: "Medium",
-      },
-      timestamp: "2024-01-15 14:30",
-      status: "Completed",
-    },
-    {
-      id: 2,
-      guestName: "Sarah Johnson",
-      activityType: "Rest",
-      rideName: "Rest Area",
-      duration: "45m",
-      intensity: "Low",
-      healthMetrics: {
-        heartRate: 72,
-        bloodPressure: "110/70",
-        stressLevel: "Low",
-      },
-      timestamp: "2024-01-15 14:15",
-      status: "Active",
-    },
-    {
-      id: 3,
-      guestName: "Mike Davis",
-      activityType: "Ride",
-      rideName: "Water Slide",
-      duration: "8m",
-      intensity: "Medium",
-      healthMetrics: {
-        heartRate: 125,
-        bloodPressure: "118/78",
-        stressLevel: "Medium",
-      },
-      timestamp: "2024-01-15 14:00",
-      status: "Completed",
-    },
-    {
-      id: 4,
-      guestName: "Emily Wilson",
-      activityType: "Ride",
-      rideName: "Ferris Wheel",
-      duration: "12m",
-      intensity: "Low",
-      healthMetrics: {
-        heartRate: 85,
-        bloodPressure: "105/65",
-        stressLevel: "Low",
-      },
-      timestamp: "2024-01-15 13:45",
-      status: "Completed",
-    },
-    {
-      id: 5,
-      guestName: "David Brown",
-      activityType: "Ride",
-      rideName: "Roller Coaster B",
-      duration: "18m",
-      intensity: "High",
-      healthMetrics: {
-        heartRate: 155,
-        bloodPressure: "135/85",
-        stressLevel: "High",
-      },
-      timestamp: "2024-01-15 13:30",
-      status: "Completed",
-    },
-  ];
 
   const stats = [
     {
@@ -113,12 +145,12 @@ export default function ActivityTrackingClient() {
       color: "blue",
     },
     {
-      title: "Avg Session Duration",
-      value: "23m",
-      change: "+5%",
+      title: "Total Calories Burned",
+      value: "500kcal",
+      change: "+10%",
       changeType: "positive",
-      icon: ClockIcon,
-      color: "green",
+      icon: FireIcon,
+      color: "red",
     },
     {
       title: "Peak Activity Time",
@@ -136,54 +168,6 @@ export default function ActivityTrackingClient() {
       icon: ExclamationTriangleIcon,
       color: "red",
     },
-  ];
-
-  const getIntensityColor = (intensity: string) => {
-    switch (intensity) {
-      case "High":
-        return "bg-red-100 text-red-800";
-      case "Medium":
-        return "bg-yellow-100 text-yellow-800";
-      case "Low":
-        return "bg-green-100 text-green-800";
-      default:
-        return "bg-gray-100 text-gray-800";
-    }
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "Active":
-        return "bg-green-100 text-green-800";
-      case "Completed":
-        return "bg-blue-100 text-blue-800";
-      case "Paused":
-        return "bg-yellow-100 text-yellow-800";
-      default:
-        return "bg-gray-100 text-gray-800";
-    }
-  };
-
-  const getHealthStatusColor = (heartRate: number) => {
-    if (heartRate > 140) return "text-red-600";
-    if (heartRate > 120) return "text-yellow-600";
-    return "text-green-600";
-  };
-
-  const animals = [
-    { key: "cat", label: "Cat" },
-    { key: "dog", label: "Dog" },
-    { key: "elephant", label: "Elephant" },
-    { key: "lion", label: "Lion" },
-    { key: "tiger", label: "Tiger" },
-    { key: "giraffe", label: "Giraffe" },
-    { key: "dolphin", label: "Dolphin" },
-    { key: "penguin", label: "Penguin" },
-    { key: "zebra", label: "Zebra" },
-    { key: "shark", label: "Shark" },
-    { key: "whale", label: "Whale" },
-    { key: "otter", label: "Otter" },
-    { key: "crocodile", label: "Crocodile" },
   ];
 
   return (
@@ -213,10 +197,11 @@ export default function ActivityTrackingClient() {
                     {stat.value}
                   </p>
                   <p
-                    className={`text-sm ${stat.changeType === "positive"
-                      ? "text-green-600"
-                      : "text-red-600"
-                      }`}
+                    className={`text-sm ${
+                      stat.changeType === "positive"
+                        ? "text-green-600"
+                        : "text-red-600"
+                    }`}
                   >
                     {stat.change} from yesterday
                   </p>
@@ -228,23 +213,25 @@ export default function ActivityTrackingClient() {
       </div>
 
       {/* Filters and Controls */}
-      <Card className="border border-gray-200">
+      {/* <Card className="border border-gray-200">
         <CardBody className="p-6">
           <div className="flex flex-col sm:flex-row gap-4">
-            {/* <div className="flex-1"> */}
-              <Input
-                type="text"
-                placeholder="Search activities..."
-                startContent={<MagnifyingGlassIcon className="h-5 w-5 text-gray-400" />}
-                className="w-full"
-                variant="bordered"
-              />
-            {/* </div> */}
+            <Input
+              type="text"
+              placeholder="Search activities..."
+              startContent={
+                <MagnifyingGlassIcon className="h-5 w-5 text-gray-400" />
+              }
+              className="w-full"
+              variant="bordered"
+            />
 
             <Select
               placeholder="Select time range"
               selectedKeys={selectedTimeRange ? [selectedTimeRange] : []}
-              onSelectionChange={(keys) => setSelectedTimeRange(Array.from(keys)[0] as string)}
+              onSelectionChange={(keys) =>
+                setSelectedTimeRange(Array.from(keys)[0] as string)
+              }
               className="min-w-[150px]"
               variant="bordered"
             >
@@ -257,7 +244,9 @@ export default function ActivityTrackingClient() {
             <Select
               placeholder="Select activity type"
               selectedKeys={selectedActivityType ? [selectedActivityType] : []}
-              onSelectionChange={(keys) => setSelectedActivityType(Array.from(keys)[0] as string)}
+              onSelectionChange={(keys) =>
+                setSelectedActivityType(Array.from(keys)[0] as string)
+              }
               className="min-w-[180px]"
               variant="bordered"
             >
@@ -276,8 +265,7 @@ export default function ActivityTrackingClient() {
             </Button>
           </div>
         </CardBody>
-      </Card>
-
+      </Card> */}
 
       {/* Activity Timeline */}
       <Card className="border border-gray-200">
