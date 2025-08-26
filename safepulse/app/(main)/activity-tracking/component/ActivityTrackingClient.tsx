@@ -22,6 +22,7 @@ import {
 } from "@heroui/react";
 import {
   fetchActivityDashboard,
+  fetchEnhancedActivityDashboard,
 } from "@/redux/slices/activitySlice";
 import { useAppDispatch, useAppSelector } from "@/redux/reduxHooks/reduxHook";
 
@@ -149,10 +150,14 @@ export default function ActivityTrackingClient() {
   const [selectedTimeRange, setSelectedTimeRange] = useState("today");
   const [selectedActivityType, setSelectedActivityType] = useState("all");
   const stats = useAppSelector((state) => state.activityTracking.dashboardData);
-  console.log("stats>>>>", stats);
+  const enhancedStats = useAppSelector(
+    (state) => state.activityTracking.enhancedDashboardData
+  );
+  console.log("enhancedStats>>>>", enhancedStats);
 
   useEffect(() => {
     dispatch(fetchActivityDashboard());
+    dispatch(fetchEnhancedActivityDashboard());
   }, []);
 
   // Create a mapping of icon names to actual icon components
@@ -231,10 +236,10 @@ export default function ActivityTrackingClient() {
                     </p>
                     <p
                       className={`text-sm ${stat.changeType === "positive"
-                          ? "text-green-600"
-                          : stat.changeType === "negative"
-                            ? "text-red-600"
-                            : "text-gray-600"
+                        ? "text-green-600"
+                        : stat.changeType === "negative"
+                          ? "text-red-600"
+                          : "text-gray-600"
                         }`}
                     >
                       {stat.change} from yesterday
@@ -424,40 +429,65 @@ export default function ActivityTrackingClient() {
           </CardHeader>
           <CardBody>
             <div className="space-y-4">
+              {/* Rides */}
               <div className="flex items-center justify-between">
                 <span className="text-sm text-gray-600">Rides</span>
                 <div className="flex items-center">
                   <div className="w-32 bg-gray-200 rounded-full h-2 mr-2">
                     <div
                       className="bg-blue-600 h-2 rounded-full"
-                      style={{ width: "65%" }}
+                      style={{
+                        width: `${enhancedStats?.activityDistribution?.rides?.percentage || 0}%`
+                      }}
                     ></div>
                   </div>
-                  <span className="text-sm font-medium text-gray-900">65%</span>
+                  <span className="text-sm font-medium text-gray-900">
+                    {enhancedStats?.activityDistribution?.rides?.percentage || 0}%
+                  </span>
                 </div>
               </div>
+
+              {/* Rest Periods */}
               <div className="flex items-center justify-between">
                 <span className="text-sm text-gray-600">Rest Periods</span>
                 <div className="flex items-center">
                   <div className="w-32 bg-gray-200 rounded-full h-2 mr-2">
                     <div
                       className="bg-green-600 h-2 rounded-full"
-                      style={{ width: "25%" }}
+                      style={{
+                        width: `${enhancedStats?.activityDistribution?.restPeriods?.percentage || 0}%`
+                      }}
                     ></div>
                   </div>
-                  <span className="text-sm font-medium text-gray-900">25%</span>
+                  <span className="text-sm font-medium text-gray-900">
+                    {enhancedStats?.activityDistribution?.restPeriods?.percentage || 0}%
+                  </span>
                 </div>
               </div>
+
+              {/* Food & Beverage */}
               <div className="flex items-center justify-between">
                 <span className="text-sm text-gray-600">Food & Beverage</span>
                 <div className="flex items-center">
                   <div className="w-32 bg-gray-200 rounded-full h-2 mr-2">
                     <div
                       className="bg-yellow-600 h-2 rounded-full"
-                      style={{ width: "10%" }}
+                      style={{
+                        width: `${enhancedStats?.activityDistribution?.foodBeverage?.percentage || 0}%`
+                      }}
                     ></div>
                   </div>
-                  <span className="text-sm font-medium text-gray-900">10%</span>
+                  <span className="text-sm font-medium text-gray-900">
+                    {enhancedStats?.activityDistribution?.foodBeverage?.percentage || 0}%
+                  </span>
+                </div>
+              </div>
+
+              {/* Total Activities Count */}
+              <div className="pt-2 border-t border-gray-100">
+                <div className="flex items-center justify-between text-xs text-gray-500">
+                  <span>Total Activities</span>
+                  <span>{enhancedStats?.activityDistribution?.totalActivities || 0}</span>
                 </div>
               </div>
             </div>
@@ -473,28 +503,37 @@ export default function ActivityTrackingClient() {
           </CardHeader>
           <CardBody>
             <div className="space-y-3">
-              {[
-                { hour: "2:00 PM", activity: "Very High", percentage: 95 },
-                { hour: "3:00 PM", activity: "High", percentage: 85 },
-                { hour: "1:00 PM", activity: "High", percentage: 80 },
-                { hour: "4:00 PM", activity: "Medium", percentage: 65 },
-                { hour: "12:00 PM", activity: "Medium", percentage: 60 },
-              ].map((item, index) => (
-                <div key={index} className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">{item.hour}</span>
-                  <div className="flex items-center">
-                    <div className="w-32 bg-gray-200 rounded-full h-2 mr-2">
-                      <div
-                        className="bg-purple-600 h-2 rounded-full"
-                        style={{ width: `${item.percentage}%` }}
-                      ></div>
+              {enhancedStats?.peakActivityHours && enhancedStats.peakActivityHours.length > 0 ? (
+                enhancedStats.peakActivityHours.slice(0, 5).map((item, index) => (
+                  <div key={index} className="flex items-center justify-between">
+                    <span className="text-sm text-gray-600">{item.hour}</span>
+                    <div className="flex items-center">
+                      <div className="w-32 bg-gray-200 rounded-full h-2 mr-2">
+                        <div
+                          className="bg-purple-600 h-2 rounded-full"
+                          style={{ width: `${item.percentage}%` }}
+                        ></div>
+                      </div>
+                      <span className="text-sm font-medium text-gray-900">
+                        {item.percentage}%
+                      </span>
                     </div>
-                    <span className="text-sm font-medium text-gray-900">
-                      {item.percentage}%
-                    </span>
                   </div>
-                </div>
-              ))}
+                ))
+              ) : (
+                // Show placeholder when no data
+                Array.from({ length: 5 }).map((_, index) => (
+                  <div key={index} className="flex items-center justify-between">
+                    <span className="text-sm text-gray-400">--:-- --</span>
+                    <div className="flex items-center">
+                      <div className="w-32 bg-gray-100 rounded-full h-2 mr-2">
+                        <div className="bg-gray-200 h-2 rounded-full" style={{ width: "0%" }}></div>
+                      </div>
+                      <span className="text-sm font-medium text-gray-400">0%</span>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           </CardBody>
         </Card>

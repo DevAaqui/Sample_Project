@@ -6,6 +6,8 @@ const activityTrackController = require("../controllers/activityTrackController"
 // Dashboard route (no auth required)
 router.get("/dashboard", activityTrackController.getActivityTrackingDashboard);
 
+router.get("/enhanced-dashboard", activityTrackController.getEnhancedActivityDashboard);
+
 // Individual metric routes (auth required)
 // router.get(
 //   "/active-sessions",

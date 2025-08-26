@@ -28,6 +28,34 @@ const getActivityTrackingDashboard = async (req, res) => {
 };
 
 /**
+ * Get Enhanced Activity Dashboard
+ * @route GET /api/activity-track/enhanced-dashboard
+ * @access Public (no authentication required)
+ */
+const getEnhancedActivityDashboard = async (req, res) => {
+  try {
+    const enhancedData =
+      await activityTrackServices.getEnhancedActivityDashboard();
+
+    res.status(200).json({
+      success: true,
+      data: enhancedData,
+      message:
+        "Enhanced activity tracking dashboard data retrieved successfully",
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error) {
+    console.error("Controller Error - getEnhancedActivityDashboard:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch enhanced activity tracking dashboard data",
+      error: error.message,
+      timestamp: new Date().toISOString(),
+    });
+  }
+};
+
+/**
  * Get Active Sessions Count
  * @route GET /api/activity-track/active-sessions
  * @access Private
@@ -125,6 +153,59 @@ const getHealthAlertsCount = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Failed to fetch health alerts data",
+      error: error.message,
+      timestamp: new Date().toISOString(),
+    });
+  }
+};
+
+/**
+ * Get Activity Distribution
+ * @route GET /api/activity-track/activity-distribution
+ * @access Private
+ */
+const getActivityDistribution = async (req, res) => {
+  try {
+    const distributionData =
+      await activityTrackServices.getActivityDistribution();
+
+    res.status(200).json({
+      success: true,
+      data: distributionData,
+      message: "Activity distribution data retrieved successfully",
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error) {
+    console.error("Controller Error - getActivityDistribution:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch activity distribution data",
+      error: error.message,
+      timestamp: new Date().toISOString(),
+    });
+  }
+};
+
+/**
+ * Get Peak Activity Hours
+ * @route GET /api/activity-track/peak-activity-hours
+ * @access Private
+ */
+const getPeakActivityHours = async (req, res) => {
+  try {
+    const peakHoursData = await activityTrackServices.getPeakActivityHours();
+
+    res.status(200).json({
+      success: true,
+      data: peakHoursData,
+      message: "Peak activity hours data retrieved successfully",
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error) {
+    console.error("Controller Error - getPeakActivityHours:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch peak activity hours data",
       error: error.message,
       timestamp: new Date().toISOString(),
     });
@@ -286,10 +367,13 @@ const getActivityTrackingStatistics = async (req, res) => {
 
 module.exports = {
   getActivityTrackingDashboard,
+  getEnhancedActivityDashboard,
   getActiveSessionsCount,
   getTotalCaloriesBurned,
   getPeakActivityTime,
   getHealthAlertsCount,
+  getActivityDistribution,
+  getPeakActivityHours,
   getGuestActivityTracking,
   getRealTimeActivityTracking,
   refreshActivityTrackingData,

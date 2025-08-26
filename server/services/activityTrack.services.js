@@ -372,10 +372,234 @@ const getActivityTrackingDashboard = async () => {
   }
 };
 
+/**
+ * Get Activity Distribution
+ * Returns the distribution of different activity types
+ */
+const getActivityDistribution = async () => {
+  try {
+    if (!GuestMetric) {
+      throw new Error("GuestMetric model is not properly imported");
+    }
+
+    const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+
+    // Get total activities count
+    const totalActivities = await GuestMetric.count({
+      where: {
+        timestamp: {
+          [Op.gte]: twentyFourHoursAgo,
+        },
+      },
+    });
+
+    // Get rides count (assuming rides have specific characteristics)
+    const ridesCount = await GuestMetric.count({
+      where: {
+        timestamp: {
+          [Op.gte]: twentyFourHoursAgo,
+        },
+        // You might need to adjust this based on your data structure
+        // For now, assuming rides have higher heart rate or specific activity type
+        heart_rate: {
+          [Op.gt]: 100,
+        },
+      },
+    });
+
+    // Get rest periods count (low activity periods)
+    const restCount = await GuestMetric.count({
+      where: {
+        timestamp: {
+          [Op.gte]: twentyFourHoursAgo,
+        },
+        heart_rate: {
+          [Op.lte]: 80,
+        },
+        steps: {
+          [Op.lte]: 100,
+        },
+      },
+    });
+
+    // Get food & beverage count (assuming based on time patterns or specific metrics)
+    const foodCount = await GuestMetric.count({
+      where: {
+        timestamp: {
+          [Op.gte]: twentyFourHoursAgo,
+        },
+        // You might need to adjust this based on your data structure
+        // For now, using a time-based approach (meal times)
+        [Op.or]: [
+          GuestMetric.sequelize.literal("HOUR(timestamp) BETWEEN 7 AND 9"),
+          GuestMetric.sequelize.literal("HOUR(timestamp) BETWEEN 12 AND 14"),
+          GuestMetric.sequelize.literal("HOUR(timestamp) BETWEEN 18 AND 20"),
+        ],
+      },
+    });
+
+    // Calculate percentages
+    const ridesPercentage =
+      totalActivities > 0
+        ? Math.round((ridesCount / totalActivities) * 100)
+        : 0;
+    const restPercentage =
+      totalActivities > 0 ? Math.round((restCount / totalActivities) * 100) : 0;
+    const foodPercentage =
+      totalActivities > 0 ? Math.round((foodCount / totalActivities) * 100) : 0;
+
+    return {
+      rides: {
+        count: ridesCount,
+        percentage: ridesPercentage,
+        color: "blue",
+      },
+      restPeriods: {
+        count: restCount,
+        percentage: restPercentage,
+        color: "green",
+      },
+      foodBeverage: {
+        count: foodCount,
+        percentage: foodPercentage,
+        color: "yellow",
+      },
+      totalActivities: totalActivities,
+    };
+  } catch (error) {
+    console.error("Error getting activity distribution:", error);
+    throw error;
+  }
+};
+
+/**
+ * Get Peak Activity Hours
+ * Returns the hours with highest activity levels
+ */
+const getPeakActivityHours = async () => {
+  try {
+    if (!GuestMetric) {
+      throw new Error("GuestMetric model is not properly imported");
+    }
+
+    const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+
+    // Get activity by hour with more detailed analysis
+    const activityByHour = await GuestMetric.findAll({
+      attributes: [
+        [
+          GuestMetric.sequelize.fn(
+            "HOUR",
+            GuestMetric.sequelize.col("timestamp")
+          ),
+          "hour",
+        ],
+        [
+          GuestMetric.sequelize.fn("COUNT", GuestMetric.sequelize.col("*")),
+          "activityCount",
+        ],
+        [
+          GuestMetric.sequelize.fn(
+            "AVG",
+            GuestMetric.sequelize.col("heart_rate")
+          ),
+          "avgHeartRate",
+        ],
+        [
+          GuestMetric.sequelize.fn("SUM", GuestMetric.sequelize.col("steps")),
+          "totalSteps",
+        ],
+      ],
+      where: {
+        timestamp: {
+          [Op.gte]: twentyFourHoursAgo,
+        },
+      },
+      group: [
+        GuestMetric.sequelize.fn(
+          "HOUR",
+          GuestMetric.sequelize.col("timestamp")
+        ),
+      ],
+      order: [
+        [
+          GuestMetric.sequelize.fn("COUNT", GuestMetric.sequelize.col("*")),
+          "DESC",
+        ],
+      ],
+      limit: 10, // Get top 10 hours
+    });
+
+    // Calculate activity levels and percentages
+    const maxActivity = Math.max(
+      ...activityByHour.map((h) => parseInt(h.dataValues.activityCount))
+    );
+
+    const peakHours = activityByHour.map((hour) => {
+      const hourData = hour.dataValues;
+      const activityCount = parseInt(hourData.activityCount);
+      const percentage =
+        maxActivity > 0 ? Math.round((activityCount / maxActivity) * 100) : 0;
+
+      // Determine activity level based on percentage
+      let activityLevel = "Low";
+      if (percentage >= 80) activityLevel = "Very High";
+      else if (percentage >= 60) activityLevel = "High";
+      else if (percentage >= 40) activityLevel = "Medium";
+
+      // Format hour to 12-hour format
+      const hour24 = parseInt(hourData.hour);
+      const hour12 = hour24 === 0 ? 12 : hour24 > 12 ? hour24 - 12 : hour24;
+      const ampm = hour24 >= 12 ? "PM" : "AM";
+      const formattedHour = `${hour12}:00 ${ampm}`;
+
+      return {
+        hour: formattedHour,
+        activity: activityLevel,
+        percentage: percentage,
+        count: activityCount,
+        avgHeartRate: Math.round(hourData.avgHeartRate || 0),
+        totalSteps: hourData.totalSteps || 0,
+      };
+    });
+
+    return peakHours;
+  } catch (error) {
+    console.error("Error getting peak activity hours:", error);
+    throw error;
+  }
+};
+
+/**
+ * Get Enhanced Activity Tracking Dashboard
+ * Returns comprehensive data including distribution and peak hours
+ */
+const getEnhancedActivityDashboard = async () => {
+  try {
+    const [activityDistribution, peakHours] = await Promise.all(
+      [
+        getActivityDistribution(),
+        getPeakActivityHours(),
+      ]
+    );
+
+    return {
+      activityDistribution,
+      peakActivityHours: peakHours,
+    };
+  } catch (error) {
+    console.error("Error getting enhanced activity dashboard:", error);
+    throw error;
+  }
+};
+
 module.exports = {
   getActiveSessionsCount,
   getTotalCaloriesBurned,
   getPeakActivityTime,
   getHealthAlertsCount,
   getActivityTrackingDashboard,
+  getActivityDistribution,
+  getPeakActivityHours,
+  getEnhancedActivityDashboard,
 };
