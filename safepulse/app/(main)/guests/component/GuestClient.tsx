@@ -113,7 +113,7 @@ export default function GuestsPage({
   const isLoading = loading;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Page Header */}
       <div>
         <h1 className="text-2xl font-bold text-gray-900">Guest Management</h1>
@@ -242,73 +242,78 @@ export default function GuestsPage({
           <h3 className="text-lg font-semibold text-gray-900">Recent Guests</h3>
         </div>
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              {table.getHeaderGroups().map((headerGroup) => (
-                <tr key={headerGroup.id}>
-                  {headerGroup.headers.map((header) => (
-                    <th
-                      key={header.id}
-                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                      onClick={header.column.getToggleSortingHandler()}
-                    >
-                      <div className="flex items-center">
-                        {flexRender(
-                          header.column.columnDef.header,
-                          header.getContext()
-                        )}
-                        {header.column.getCanSort() && (
-                          <span className="ml-1">
-                            {{
-                              asc: " 🔼",
-                              desc: " 🔽",
-                            }[header.column.getIsSorted() as string] ?? " ↕️"}
-                          </span>
-                        )}
-                      </div>
-                    </th>
-                  ))}
-                </tr>
-              ))}
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {isLoading ? (
-                <tr>
-                  <td
-                    colSpan={6}
-                    className="px-6 py-4 text-center text-gray-500"
-                  >
-                    <div className="flex items-center justify-center">
-                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-                      <span className="ml-2">Loading guests...</span>
-                    </div>
-                  </td>
-                </tr>
-              ) : table.getRowModel().rows.length === 0 ? (
-                <tr>
-                  <td
-                    colSpan={6}
-                    className="px-6 py-4 text-center text-gray-500"
-                  >
-                    No guests found
-                  </td>
-                </tr>
-              ) : (
-                table.getRowModel().rows.map((row) => (
-                  <tr key={row.id} className="hover:bg-gray-50">
-                    {row.getVisibleCells().map((cell) => (
-                      <td key={cell.id} className="px-6 py-4 whitespace-nowrap">
-                        {flexRender(
-                          cell.column.columnDef.cell,
-                          cell.getContext()
-                        )}
-                      </td>
+          <div className="max-h-96 overflow-y-auto border border-gray-200 rounded-lg">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50 sticky top-0 z-10">
+                {table.getHeaderGroups().map((headerGroup) => (
+                  <tr key={headerGroup.id}>
+                    {headerGroup.headers.map((header) => (
+                      <th
+                        key={header.id}
+                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 bg-gray-50"
+                        onClick={header.column.getToggleSortingHandler()}
+                      >
+                        <div className="flex items-center">
+                          {flexRender(
+                            header.column.columnDef.header,
+                            header.getContext()
+                          )}
+                          {header.column.getCanSort() && (
+                            <span className="ml-1">
+                              {{
+                                asc: " 🔼",
+                                desc: " 🔽",
+                              }[header.column.getIsSorted() as string] ?? " ↕️"}
+                            </span>
+                          )}
+                        </div>
+                      </th>
                     ))}
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+                ))}
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {isLoading ? (
+                  <tr>
+                    <td
+                      colSpan={6}
+                      className="px-6 py-4 text-center text-gray-500"
+                    >
+                      <div className="flex items-center justify-center">
+                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+                        <span className="ml-2">Loading guests...</span>
+                      </div>
+                    </td>
+                  </tr>
+                ) : table.getRowModel().rows.length === 0 ? (
+                  <tr>
+                    <td
+                      colSpan={6}
+                      className="px-6 py-4 text-center text-gray-500"
+                    >
+                      No guests found
+                    </td>
+                  </tr>
+                ) : (
+                  table.getRowModel().rows.map((row) => (
+                    <tr key={row.id} className="hover:bg-gray-50">
+                      {row.getVisibleCells().map((cell) => (
+                        <td
+                          key={cell.id}
+                          className="px-6 py-4 whitespace-nowrap"
+                        >
+                          {flexRender(
+                            cell.column.columnDef.cell,
+                            cell.getContext()
+                          )}
+                        </td>
+                      ))}
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
 
         {/* Pagination */}

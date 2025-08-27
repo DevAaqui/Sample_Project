@@ -93,6 +93,9 @@ const clearUserData = async () => {
 const seedAll = async (guestCount = 50) => {
   try {
     console.log("=== Starting complete database seeding ===");
+    console.log(
+      `Seeding with today's date: ${new Date().toISOString().split("T")[0]}`
+    );
 
     // Step 1: Seed admin users
     console.log("\n1. Seeding admin users...");
@@ -107,6 +110,7 @@ const seedAll = async (guestCount = 50) => {
     await seedRides();
 
     console.log("\n=== All seeding completed successfully! ===");
+    console.log(`\nData seeded for: ${new Date().toLocaleDateString()}`);
     console.log("\nDefault admin credentials:");
     console.log("Username: admin, Password: admin123");
     console.log("Username: manager, Password: manager123");
@@ -150,6 +154,7 @@ if (require.main === module) {
     .authenticate()
     .then(() => {
       console.log("Database connected successfully.");
+      console.log(`Today's date: ${new Date().toLocaleDateString()}`);
       return seedAll(guestCount);
     })
     .then(() => {
