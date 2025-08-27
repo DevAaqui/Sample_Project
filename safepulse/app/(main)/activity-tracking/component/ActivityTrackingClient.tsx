@@ -145,6 +145,10 @@ interface ActivityProps {
   };
 }
 
+const findStatByTitle = (title: string, stats: any) => {
+  return stats?.find((stat: any) => stat.title === title);
+};
+
 export default function ActivityTrackingClient() {
   const dispatch = useAppDispatch();
   const [selectedTimeRange, setSelectedTimeRange] = useState("today");
@@ -158,7 +162,7 @@ export default function ActivityTrackingClient() {
   useEffect(() => {
     dispatch(fetchActivityDashboard());
     dispatch(fetchEnhancedActivityDashboard());
-  }, []);
+  }, [dispatch]);
 
   // Create a mapping of icon names to actual icon components
   const iconMap = {
@@ -170,40 +174,40 @@ export default function ActivityTrackingClient() {
   };
 
   // Transform the Redux data into the format expected by your component
-  const transformedStats = stats ? [
+  const transformedStats = [
     {
       title: "Active Sessions",
-      value: stats[0]?.activeSessions?.current?.toLocaleString() || "0",
-      change: `${stats[0]?.activeSessions?.percentageChange || 0}%`,
-      changeType: stats[0]?.activeSessions?.trend || "neutral",
+      value: findStatByTitle("Active Sessions", stats)?.current?.toLocaleString() || "0",
+      change: `${findStatByTitle("Active Sessions", stats)?.percentageChange || 0}%`,
+      changeType: findStatByTitle("Active Sessions", stats)?.trend || "neutral",
       icon: UserGroupIcon,
       color: "blue",
     },
     {
       title: "Total Calories Burned",
-      value: `${stats[1]?.caloriesBurned?.current || 0}kcal`,
-      change: `${stats[1]?.caloriesBurned?.percentageChange || 0}%`,
-      changeType: stats[1]?.caloriesBurned?.trend || "neutral",
+      value: `${findStatByTitle("Total Calories Burned", stats)?.current || 0}kcal`,
+      change: `${findStatByTitle("Total Calories Burned", stats)?.percentageChange || 0}%`,
+      changeType: findStatByTitle("Total Calories Burned", stats)?.trend || "neutral",
       icon: FireIcon,
       color: "red",
     },
     {
       title: "Peak Activity Time",
-      value: stats[2]?.peakActivityTime?.current || "N/A",
-      change: `${stats[2]?.peakActivityTime?.percentageChange || 0}%`,
-      changeType: stats[2]?.peakActivityTime?.trend || "neutral",
+      value: findStatByTitle("Peak Activity Time", stats)?.current || "N/A",
+      change: `${findStatByTitle("Peak Activity Time", stats)?.percentageChange || 0}%`,
+      changeType: findStatByTitle("Peak Activity Time", stats)?.trend || "neutral",
       icon: ArrowTrendingUpIcon,
       color: "yellow",
     },
     {
       title: "Health Alerts",
-      value: stats[3]?.healthAlerts?.current || "0",
-      change: `${stats[3]?.healthAlerts?.percentageChange || 0}%`,
-      changeType: stats[3]?.healthAlerts?.trend || "neutral",
+      value: findStatByTitle("Health Alerts", stats)?.current || "0",
+      change: `${findStatByTitle("Health Alerts", stats)?.percentageChange || 0}%`,
+      changeType: findStatByTitle("Health Alerts", stats)?.trend || "neutral",
       icon: ExclamationTriangleIcon,
       color: "red",
     },
-  ] : [];
+  ];
 
   return (
     <div className="space-y-6">

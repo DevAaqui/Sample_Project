@@ -70,7 +70,6 @@ export async function GET(req: NextRequest) {
     }
 
     const data = await response.json();
-    console.log('data in main service>>>>>>>>>>>', data)
     return NextResponse.json(data);
   } catch (error) {
     console.error("Error in service GET:", error);
