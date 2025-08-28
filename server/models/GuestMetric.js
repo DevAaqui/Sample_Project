@@ -23,10 +23,6 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.SMALLINT,
         allowNull: true,
       },
-      blood_pressure: {
-        type: DataTypes.STRING(10),
-        allowNull: true,
-      },
       steps: {
         type: DataTypes.INTEGER,
         allowNull: true,
@@ -34,6 +30,27 @@ module.exports = (sequelize, DataTypes) => {
       calories_burned: {
         type: DataTypes.INTEGER,
         allowNull: true,
+      },
+      // New columns added
+      blood_pressure_systolic: {
+        type: DataTypes.SMALLINT,
+        allowNull: true,
+        comment: "Systolic blood pressure in mmHg",
+      },
+      blood_pressure_diastolic: {
+        type: DataTypes.SMALLINT,
+        allowNull: true,
+        comment: "Diastolic blood pressure in mmHg",
+      },
+      stress_level: {
+        type: DataTypes.ENUM("Low", "Medium", "High"),
+        allowNull: true,
+        comment: "Stress level assessment",
+      },
+      activity_level: {
+        type: DataTypes.ENUM("Low", "Medium", "High"),
+        allowNull: true,
+        comment: "Activity level assessment",
       },
       createdAt: {
         type: DataTypes.DATE,
@@ -58,6 +75,14 @@ module.exports = (sequelize, DataTypes) => {
         },
         {
           fields: ["guest_id", "timestamp"],
+        },
+        // New index for stress level queries
+        {
+          fields: ["stress_level"],
+        },
+        // New index for activity level queries
+        {
+          fields: ["activity_level"],
         },
       ],
     }

@@ -74,6 +74,21 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.ENUM("metric", "imperial"),
         allowNull: true,
       },
+      // New field for device allocation
+      device_id: {
+        type: DataTypes.BIGINT,
+        allowNull: true,
+        references: {
+          model: "wearable_devices",
+          key: "device_id",
+        },
+        comment: "Assigned wearable device ID",
+      },
+      device_assigned_date: {
+        type: DataTypes.DATE,
+        allowNull: true,
+        comment: "When the device was assigned to this guest",
+      },
       createdAt: {
         type: DataTypes.DATE,
         allowNull: false,
@@ -95,15 +110,23 @@ module.exports = (sequelize, DataTypes) => {
         {
           fields: ["phone_number"],
         },
+        // New index for device queries
+        {
+          fields: ["device_id"],
+        },
+        // Composite index for device assignment tracking
+        {
+          fields: ["device_id", "device_assigned_date"],
+        },
       ],
     }
   );
 
   Guest.associate = (models) => {
-    // Guest has many WearableDevices
-    Guest.hasMany(models.WearableDevice, {
-      foreignKey: "guest_id",
-      as: "wearableDevices",
+    // Guest has many WearableDevices (now through device_id)
+    Guest.belongsTo(models.WearableDevice, {
+      foreignKey: "device_id",
+      as: "wearableDevice",
     });
 
     // Guest has many GuestMetrics
