@@ -1,4 +1,5 @@
 const { Guest, WearableDevice } = require("../models");
+const { Op } = require("sequelize");
 
 // Sample data arrays for generating random guests
 const firstNames = [
@@ -304,35 +305,38 @@ const generateMedicalInfo = () => {
   };
 };
 
-const generateWearableDevice = (guestId) => {
-  const deviceTypes = [
-    "SmartWatch",
-    "FitnessBand",
-    "HealthMonitor",
-    "ActivityTracker",
-  ];
-  const deviceType =
-    deviceTypes[Math.floor(Math.random() * deviceTypes.length)];
-  const batteryLevel = Math.floor(Math.random() * 100) + 1;
-  const isActive = Math.random() > 0.1; // 90% chance of being active
+// Function to find and allocate an available wearable device
+const findAndAllocateDevice = async () => {
+  try {
+    // Find first available device that is active and available
+    const availableDevice = await WearableDevice.findOne({
+      where: {
+        is_active: true,
+        device_status: "Available",
+      },
+      order: [["device_id", "ASC"]], // Get the first available device
+    });
 
-  // Get current time for today's timestamp
-  const now = new Date();
+    if (!availableDevice) {
+      throw new Error(
+        "No available wearable devices found. Please seed devices first."
+      );
+    }
 
-  return {
-    guest_id: guestId,
-    device_type: deviceType,
-    // Remove device_id - it's auto-incrementing
-    device_serial_number: `DEV-${Math.random()
-      .toString(36)
-      .substr(2, 9)
-      .toUpperCase()}`, // Use serial_number instead
-    assigned_date: now.toISOString(), // Use assigned_date instead of created_at
-    // Remove created_at and updated_at - they're handled by timestamps: true
-  };
+    // Update device status to "In Use" and set assigned_date
+    await availableDevice.update({
+      device_status: "In Use",
+      assigned_date: new Date(),
+    });
+
+    return availableDevice.device_id;
+  } catch (error) {
+    console.error("❌ Error finding/allocating device:", error);
+    throw error;
+  }
 };
 
-// Create a single guest and device
+// Create a single guest and allocate device
 const createSingleGuest = async (guestNumber, totalGuests) => {
   try {
     // Generate guest data
@@ -351,9 +355,14 @@ const createSingleGuest = async (guestNumber, totalGuests) => {
     console.log(
       `\n🔄 Creating Guest ${guestNumber}/${totalGuests} at ${currentTime.toLocaleTimeString()}`
     );
-    console.log(`   �� Guest: ${firstName} ${lastName}`);
+    console.log(`    Guest: ${firstName} ${lastName}`);
 
-    // Create guest with current timestamp
+    // Find and allocate an available device first
+    console.log(`   📱 Finding available tracking device...`);
+    const deviceId = await findAndAllocateDevice();
+    console.log(`   ✅ Device allocated: ID ${deviceId}`);
+
+    // Create guest with device allocation
     const guest = await Guest.create({
       first_name: firstName,
       last_name: lastName,
@@ -371,25 +380,21 @@ const createSingleGuest = async (guestNumber, totalGuests) => {
       weight_kg: healthData.weight_kg,
       height_cm: healthData.height_cm,
       preferred_units: healthData.preferred_units,
-      createdAt: currentTime.toISOString(),
-      updatedAt: currentTime.toISOString(),
+      device_id: deviceId,
+      device_assigned_date: currentTime,
+      createdAt: currentTime,
+      updatedAt: currentTime,
     });
 
     console.log(`   ✅ Guest created with ID: ${guest.guest_id}`);
-
-    // Create wearable device with current timestamp
-    console.log(`   📱 Allocating tracking device...`);
-    const wearableDevice = generateWearableDevice(guest.guest_id);
-    await WearableDevice.create(wearableDevice);
     console.log(
-      `   ✅ Device allocated: ${wearableDevice.device_type} (${wearableDevice.device_serial_number})`
+      `    Device ID ${deviceId} assigned to guest ${guest.guest_id}`
     );
 
     const result = {
       guestId: guest.guest_id,
       name: `${firstName} ${lastName}`,
-      deviceType: wearableDevice.device_type,
-      deviceId: wearableDevice.device_serial_number,
+      deviceId: deviceId,
       timestamp: currentTime.toISOString(),
       guestNumber: guestNumber,
     };
@@ -416,7 +421,9 @@ const seedGuestsProgressive = async (totalGuests = 10, intervalMinutes = 1) => {
       const todayDate = today.toLocaleDateString();
       const todayTime = today.toLocaleTimeString();
 
-      console.log("🚀 Starting Progressive Guest and Device Seeding");
+      console.log(
+        "🚀 Starting Progressive Guest Seeding with Device Allocation"
+      );
       console.log(`📅 Today's date: ${todayDate}`);
       console.log(`🕐 Current time: ${todayTime}`);
       console.log(`📋 Total guests to create: ${totalGuests}`);
@@ -460,7 +467,7 @@ const seedGuestsProgressive = async (totalGuests = 10, intervalMinutes = 1) => {
               );
               console.log(`   Successful: ${results.length}`);
               console.log(`   Failed: ${totalGuests - results.length}`);
-              console.log(` All data timestamped for: ${todayDate}`);
+              console.log(`   All data timestamped for: ${todayDate}`);
               console.log(`🕐 Started at: ${todayTime}`);
               console.log(`⏱️  Total duration: ${totalDuration} minutes`);
 
@@ -479,24 +486,24 @@ const seedGuestsProgressive = async (totalGuests = 10, intervalMinutes = 1) => {
 
               const todayGuests = await Guest.count({
                 where: {
-                  created_at: {
-                    [require("sequelize").Op.gte]: todayStart,
-                    [require("sequelize").Op.lt]: todayEnd,
+                  createdAt: {
+                    [Op.gte]: todayStart,
+                    [Op.lt]: todayEnd,
                   },
                 },
               });
 
               const todayDevices = await WearableDevice.count({
                 where: {
-                  created_at: {
-                    [require("sequelize").Op.gte]: todayStart,
-                    [require("sequelize").Op.lt]: todayEnd,
+                  assigned_date: {
+                    [Op.gte]: todayStart,
+                    [Op.lt]: todayEnd,
                   },
                 },
               });
 
               console.log(`   ✅ Guests created today: ${todayGuests}`);
-              console.log(`   ✅ Devices created today: ${todayDevices}`);
+              console.log(`   ✅ Devices assigned today: ${todayDevices}`);
 
               // Show sample of created guests
               if (results.length > 0) {
@@ -508,7 +515,7 @@ const seedGuestsProgressive = async (totalGuests = 10, intervalMinutes = 1) => {
                   console.log(
                     `   ${index + 1}. ${result.name} (ID: ${
                       result.guestId
-                    }) - ${result.deviceType} - ${timestamp}`
+                    }) - Device: ${result.deviceId} - ${timestamp}`
                   );
                 });
                 if (results.length > 5) {
@@ -541,16 +548,28 @@ const seedGuestsProgressive = async (totalGuests = 10, intervalMinutes = 1) => {
   });
 };
 
-// Function to clear all guest and device data
-const clearGuestAndDeviceData = async () => {
+// Function to clear all guest data (devices remain but status reset)
+const clearGuestData = async () => {
   try {
-    console.log(" Clearing all guest and device data...");
+    console.log("🗑️  Clearing all guest data...");
 
-    // Delete in order due to foreign key constraints
-    await WearableDevice.destroy({ where: {} });
+    // Reset device statuses back to "Available" for devices that were assigned to guests
+    await WearableDevice.update(
+      {
+        device_status: "Available",
+        assigned_date: null,
+      },
+      {
+        where: {
+          device_status: "In Use",
+        },
+      }
+    );
+
+    // Delete all guests
     await Guest.destroy({ where: {} });
 
-    console.log("✅ All guest and device data cleared successfully!");
+    console.log("✅ All guest data cleared and devices reset to available!");
   } catch (error) {
     console.error("❌ Error clearing data:", error);
     throw error;
@@ -562,8 +581,19 @@ const showCurrentCounts = async () => {
   try {
     const guestCount = await Guest.count();
     const deviceCount = await WearableDevice.count();
+    const availableDevices = await WearableDevice.count({
+      where: {
+        is_active: true,
+        device_status: "Available",
+      },
+    });
+    const assignedDevices = await WearableDevice.count({
+      where: {
+        device_status: "In Use",
+      },
+    });
 
-    // Get today's counts - use the correct column names from your model
+    // Get today's counts
     const today = new Date();
     const todayStart = new Date(
       today.getFullYear(),
@@ -576,21 +606,20 @@ const showCurrentCounts = async () => {
       today.getDate() + 1
     );
 
-    // Use the correct column names: 'createdAt' not 'created_at'
     const todayGuests = await Guest.count({
       where: {
         createdAt: {
-          [require("sequelize").Op.gte]: todayStart,
-          [require("sequelize").Op.lt]: todayEnd,
+          [Op.gte]: todayStart,
+          [Op.lt]: todayEnd,
         },
       },
     });
 
-    const todayDevices = await WearableDevice.count({
+    const todayDeviceAssignments = await WearableDevice.count({
       where: {
-        createdAt: {
-          [require("sequelize").Op.gte]: todayStart,
-          [require("sequelize").Op.lt]: todayEnd,
+        assigned_date: {
+          [Op.gte]: todayStart,
+          [Op.lt]: todayEnd,
         },
       },
     });
@@ -598,20 +627,36 @@ const showCurrentCounts = async () => {
     console.log("📊 Current Database Counts:");
     console.log(`   Total Guests: ${guestCount}`);
     console.log(`   Total Wearable Devices: ${deviceCount}`);
+    console.log(`   Available Devices: ${availableDevices}`);
+    console.log(`   Assigned Devices: ${assignedDevices}`);
     console.log(`   Guests Created Today: ${todayGuests}`);
-    console.log(`   Devices Created Today: ${todayDevices}`);
+    console.log(`   Device Assignments Today: ${todayDeviceAssignments}`);
 
-    return { guestCount, deviceCount, todayGuests, todayDevices };
+    return {
+      guestCount,
+      deviceCount,
+      availableDevices,
+      assignedDevices,
+      todayGuests,
+      todayDeviceAssignments,
+    };
   } catch (error) {
     console.error("❌ Error getting counts:", error);
-    return { guestCount: 0, deviceCount: 0, todayGuests: 0, todayDevices: 0 };
+    return {
+      guestCount: 0,
+      deviceCount: 0,
+      availableDevices: 0,
+      assignedDevices: 0,
+      todayGuests: 0,
+      todayDeviceAssignments: 0,
+    };
   }
 };
 
 // Export functions
 module.exports = {
   seedGuestsProgressive,
-  clearGuestAndDeviceData,
+  clearGuestData,
   showCurrentCounts,
 };
 
@@ -631,10 +676,22 @@ if (require.main === module) {
       // Show current counts first
       await showCurrentCounts();
 
+      // Check if we have enough available devices
+      const { availableDevices } = await showCurrentCounts();
+      if (availableDevices < totalGuests) {
+        console.error(
+          `❌ Not enough available devices! Need ${totalGuests}, but only ${availableDevices} available.`
+        );
+        console.log(
+          "💡 Please run the wearable device seeding script first to create more devices."
+        );
+        process.exit(1);
+      }
+
       // Ask for confirmation if clearing existing data
       if (process.argv.includes("--clear")) {
-        console.log("\n⚠️  Clearing existing data first...");
-        await clearGuestAndDeviceData();
+        console.log("\n⚠️  Clearing existing guest data first...");
+        await clearGuestData();
       }
 
       // Run progressive seeding
@@ -642,7 +699,9 @@ if (require.main === module) {
     })
     .then((results) => {
       console.log("\n🎯 Progressive seeding finished successfully!");
-      console.log(`📋 Created ${results.length} guests with tracking devices`);
+      console.log(
+        `📋 Created ${results.length} guests with allocated tracking devices`
+      );
       console.log(`📅 All data is timestamped for today!`);
       console.log(
         `⏱️  Guests were created one by one at ${
