@@ -518,7 +518,7 @@ const getLatestHealthMetrics = async (req, res) => {
           value: healthStatus,
           color: getHealthStatusColor(healthStatus),
         },
-        lastCheck: latestMetric?.timestamp || guest.createdAt,
+        lastCheck: latestMetric?.createdAt || guest.createdAt,
         // Include raw metric data for additional processing
         rawMetrics: latestMetric,
       };

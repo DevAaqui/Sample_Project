@@ -175,10 +175,10 @@ export const columns = [
       return (
         <div className="text-sm">
           <div className="text-gray-900">
-            <span className="font-medium">{metrics.steps.toLocaleString()}</span> steps
+            <span className="font-medium">{metrics?.steps?.toLocaleString()}</span> steps
           </div>
           <div className="text-xs text-gray-500">
-            {metrics.calories_burned} cal burned
+            {metrics?.calories_burned} cal burned
           </div>
         </div>
       );
