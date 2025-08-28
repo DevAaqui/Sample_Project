@@ -371,8 +371,8 @@ const createSingleGuest = async (guestNumber, totalGuests) => {
       weight_kg: healthData.weight_kg,
       height_cm: healthData.height_cm,
       preferred_units: healthData.preferred_units,
-      created_at: currentTime.toISOString(),
-      updated_at: currentTime.toISOString(),
+      createdAt: currentTime.toISOString(),
+      updatedAt: currentTime.toISOString(),
     });
 
     console.log(`   ✅ Guest created with ID: ${guest.guest_id}`);

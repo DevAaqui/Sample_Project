@@ -1,204 +1,285 @@
-const { Ride, RideSession, RideMetric, Guest } = require("../models");
+const { Ride } = require("../models");
 
-// Sample ride data
-const rideData = [
-  {
-    ride_name: "Thunder Mountain",
-    ride_type: "Roller Coaster",
-    min_height_cm: 120.0,
-    max_heart_rate: 160,
-    g_force: 3.2,
-    duration_seconds: 180,
-  },
-  {
-    ride_name: "Splash Falls",
-    ride_type: "Water Ride",
-    min_height_cm: 100.0,
-    max_heart_rate: 140,
-    g_force: 1.5,
-    duration_seconds: 120,
-  },
-  {
-    ride_name: "Family Carousel",
-    ride_type: "Family Ride",
-    min_height_cm: 90.0,
-    max_heart_rate: 120,
-    g_force: 1.0,
-    duration_seconds: 90,
-  },
-  {
-    ride_name: "Extreme Drop",
-    ride_type: "Thrill Ride",
-    min_height_cm: 140.0,
-    max_heart_rate: 180,
-    g_force: 4.5,
-    duration_seconds: 60,
-  },
-  {
-    ride_name: "Kiddie Train",
-    ride_type: "Kids Ride",
-    min_height_cm: 80.0,
-    max_heart_rate: 110,
-    g_force: 0.8,
-    duration_seconds: 150,
-  },
-  {
-    ride_name: "Haunted Mansion",
-    ride_type: "Dark Ride",
-    min_height_cm: 100.0,
-    max_heart_rate: 130,
-    g_force: 1.2,
-    duration_seconds: 300,
-  },
-  {
-    ride_name: "Sky Screamer",
-    ride_type: "Thrill Ride",
-    min_height_cm: 130.0,
-    max_heart_rate: 170,
-    g_force: 3.8,
-    duration_seconds: 75,
-  },
-  {
-    ride_name: "River Rapids",
-    ride_type: "Water Ride",
-    min_height_cm: 110.0,
-    max_heart_rate: 150,
-    g_force: 2.1,
-    duration_seconds: 240,
-  },
-  {
-    ride_name: "Merry-Go-Round",
-    ride_type: "Family Ride",
-    min_height_cm: 85.0,
-    max_heart_rate: 115,
-    g_force: 0.9,
-    duration_seconds: 120,
-  },
-  {
-    ride_name: "Dragon Coaster",
-    ride_type: "Roller Coaster",
-    min_height_cm: 125.0,
-    max_heart_rate: 165,
-    g_force: 3.5,
-    duration_seconds: 210,
-  },
+// Sample ride data arrays
+const rideTypes = [
+  "Roller Coaster",
+  "Water Ride",
+  "Family Ride",
+  "Thrill Ride",
+  "Dark Ride",
+  "Spinning Ride",
+  "Flying Ride",
+  "Drop Tower",
+  "Carousel",
+  "Ferris Wheel",
+  "Bumper Cars",
+  "Tea Cups",
+  "Log Flume",
+  "River Rapids",
+  "Swing Ride",
+  "Pirate Ship",
+  "Haunted House",
+  "Maze",
+  "Mini Golf",
+  "Go-Karts",
 ];
 
-// Helper function to get random number between min and max
-const getRandomNumber = (min, max) => {
-  return Math.floor(Math.random() * (max - min + 1)) + min;
-};
+const rideNames = [
+  // Roller Coasters
+  "Thunder Bolt",
+  "Dragon's Fury",
+  "Speed Demon",
+  "Mountain Express",
+  "Twisted Steel",
+  "Velocity X",
+  "Cobra's Strike",
+  "Phantom Force",
+  "Lightning Strike",
+  "Storm Chaser",
+  "Raptor's Flight",
+  "Cyclone",
+  "Tornado",
+  "Hurricane",
+  "Tsunami",
+  "Earthquake",
+  "Volcano",
+  "Avalanche",
+  "Blizzard",
+  "Thunderstorm",
 
-// Helper function to get random date between start and end
-const getRandomDate = (start, end) => {
-  return new Date(
-    start.getTime() + Math.random() * (end.getTime() - start.getTime())
-  );
-};
+  // Water Rides
+  "Splash Mountain",
+  "River Adventure",
+  "Tidal Wave",
+  "Ocean Explorer",
+  "Coral Reef",
+  "Deep Blue",
+  "Waterfall",
+  "Rapid River",
+  "Canyon Rapids",
+  "Mountain Stream",
+  "Lake Adventure",
+  "Bay Explorer",
+  "Harbor Cruise",
+  "Island Hopper",
+  "Beach Blaster",
 
-// Helper function to generate random ride sessions
-const generateRideSessions = async (rideId, count = 10) => {
-  const sessions = [];
-  const guests = await Guest.findAll({ attributes: ["guest_id"] });
+  // Family Rides
+  "Magic Carpet",
+  "Flying Dutchman",
+  "Treasure Hunt",
+  "Castle Quest",
+  "Dragon's Lair",
+  "Fairy Tale",
+  "Enchanted Forest",
+  "Wizard's Tower",
+  "Knight's Quest",
+  "Princess Carousel",
+  "Royal Carriage",
+  "Golden Chariot",
+  "Silver Star",
+  "Crystal Palace",
+  "Emerald City",
 
-  if (guests.length === 0) {
-    console.log("No guests found. Please seed guests first.");
-    return sessions;
+  // Thrill Rides
+  "Free Fall",
+  "Sky Drop",
+  "Gravity Defier",
+  "Adrenaline Rush",
+  "Fear Factor",
+  "Extreme Edge",
+  "Dare Devil",
+  "Risk Taker",
+  "Thrill Seeker",
+  "Adventure Quest",
+  "Expedition X",
+  "Discovery Zone",
+  "Explorer's Path",
+  "Pioneer's Trail",
+  "Trail Blazer",
+
+  // Dark Rides
+  "Haunted Mansion",
+  "Ghost Train",
+  "Phantom Manor",
+  "Spirit World",
+  "Shadow Realm",
+  "Nightmare Express",
+  "Dream Weaver",
+  "Fantasy Land",
+  "Wonder World",
+  "Magic Kingdom",
+  "Enchanted Realm",
+  "Mystical Forest",
+  "Secret Garden",
+  "Hidden Valley",
+  "Lost World",
+
+  // Spinning Rides
+  "Whirlwind",
+  "Spinner",
+  "Tornado",
+  "Cyclone",
+  "Vortex",
+  "Spiral",
+  "Helix",
+  "Corkscrew",
+  "Screwball",
+  "Twister",
+  "Spinner",
+  "Rotator",
+  "Revolver",
+  "Spinner",
+  "Whirler",
+
+  // Flying Rides
+  "Sky Rider",
+  "Air Force",
+  "Flying Ace",
+  "Wing Commander",
+  "Sky Captain",
+  "Air Admiral",
+  "Flight Master",
+  "Sky Pilot",
+  "Air Marshal",
+  "Flight Captain",
+  "Sky Navigator",
+  "Air Controller",
+  "Flight Engineer",
+  "Sky Mechanic",
+  "Air Technician",
+];
+
+// Generate random ride data
+const generateRideData = (index) => {
+  const rideType = rideTypes[Math.floor(Math.random() * rideTypes.length)];
+  const rideName = rideNames[index % rideNames.length];
+
+  // Generate realistic specifications based on ride type
+  let minHeight, maxHeartRate, gForce, duration;
+
+  if (rideType === "Roller Coaster") {
+    minHeight = Math.floor(Math.random() * 30) + 120; // 120-150 cm
+    maxHeartRate = Math.floor(Math.random() * 40) + 140; // 140-180 bpm
+    gForce = (Math.random() * 3 + 2).toFixed(2); // 2.0-5.0 G
+    duration = Math.floor(Math.random() * 120) + 60; // 60-180 seconds
+  } else if (rideType === "Water Ride") {
+    minHeight = Math.floor(Math.random() * 20) + 100; // 100-120 cm
+    maxHeartRate = Math.floor(Math.random() * 30) + 110; // 110-140 bpm
+    gForce = (Math.random() * 1.5 + 0.5).toFixed(2); // 0.5-2.0 G
+    duration = Math.floor(Math.random() * 180) + 120; // 120-300 seconds
+  } else if (rideType === "Thrill Ride") {
+    minHeight = Math.floor(Math.random() * 25) + 130; // 130-155 cm
+    maxHeartRate = Math.floor(Math.random() * 35) + 130; // 130-165 bpm
+    gForce = (Math.random() * 2.5 + 1.5).toFixed(2); // 1.5-4.0 G
+    duration = Math.floor(Math.random() * 90) + 45; // 45-135 seconds
+  } else if (rideType === "Drop Tower") {
+    minHeight = Math.floor(Math.random() * 20) + 140; // 140-160 cm
+    maxHeartRate = Math.floor(Math.random() * 30) + 150; // 150-180 bpm
+    gForce = (Math.random() * 2 + 1).toFixed(2); // 1.0-3.0 G
+    duration = Math.floor(Math.random() * 60) + 30; // 30-90 seconds
+  } else if (rideType === "Family Ride") {
+    minHeight = Math.floor(Math.random() * 15) + 80; // 80-95 cm
+    maxHeartRate = Math.floor(Math.random() * 20) + 90; // 90-110 bpm
+    gForce = (Math.random() * 0.5 + 0.2).toFixed(2); // 0.2-0.7 G
+    duration = Math.floor(Math.random() * 300) + 180; // 180-480 seconds
+  } else {
+    // Default values for other ride types
+    minHeight = Math.floor(Math.random() * 25) + 100; // 100-125 cm
+    maxHeartRate = Math.floor(Math.random() * 25) + 100; // 100-125 bpm
+    gForce = (Math.random() * 1.5 + 0.5).toFixed(2); // 0.5-2.0 G
+    duration = Math.floor(Math.random() * 150) + 90; // 90-240 seconds
   }
 
-  const baseDate = new Date(2024, 0, 1);
-
-  for (let i = 0; i < count; i++) {
-    const guest = guests[Math.floor(Math.random() * guests.length)];
-    const startTime = getRandomDate(baseDate, new Date());
-    const endTime = new Date(
-      startTime.getTime() + getRandomNumber(30, 300) * 1000
-    ); // 30 seconds to 5 minutes
-
-    const preRideHeartRate = getRandomNumber(60, 120);
-    const postRideHeartRate = getRandomNumber(
-      preRideHeartRate + 10,
-      preRideHeartRate + 50
-    );
-    const caloriesBurned = getRandomNumber(20, 150);
-
-    sessions.push({
-      ride_id: rideId,
-      guest_id: guest.guest_id,
-      start_time: startTime,
-      end_time: endTime,
-      pre_ride_heart_rate: preRideHeartRate,
-      post_ride_heart_rate: postRideHeartRate,
-      calories_burned: caloriesBurned,
-    });
-  }
-
-  return sessions;
+  return {
+    ride_name: rideName,
+    ride_type: rideType,
+    min_height_cm: minHeight,
+    max_heart_rate: maxHeartRate,
+    g_force: parseFloat(gForce),
+    duration_seconds: duration,
+  };
 };
 
-// Helper function to generate ride metrics for a session
-const generateRideMetrics = (sessionId, startTime, endTime) => {
-  const metrics = [];
-  const duration = Math.floor((new Date(endTime) - new Date(startTime)) / 1000);
-  const interval = Math.floor(duration / 10); // Generate 10 metrics per session
-
-  for (let i = 0; i < 10; i++) {
-    const timestamp = new Date(
-      new Date(startTime).getTime() + i * interval * 1000
-    );
-    const heartRate = getRandomNumber(80, 180);
-    const gForce = (Math.random() * 4 + 0.5).toFixed(2); // 0.5 to 4.5 g
-
-    metrics.push({
-      session_id: sessionId,
-      timestamp: timestamp,
-      heart_rate: heartRate,
-      g_force: parseFloat(gForce),
-    });
-  }
-
-  return metrics;
-};
-
-// Main function to seed rides
-const seedRides = async () => {
+// Main seeding function
+const seedRides = async (rideCount = 100) => {
   try {
-    console.log("Starting to seed rides...");
+    const startTime = new Date();
+    console.log("�� Starting Amusement Park Ride Seeding");
+    console.log(`📅 Today's date: ${startTime.toLocaleDateString()}`);
+    console.log(`🕐 Current time: ${startTime.toLocaleTimeString()}`);
+    console.log(`🎯 Total rides to create: ${rideCount}`);
 
-    for (const rideInfo of rideData) {
-      // Create ride
-      const ride = await Ride.create(rideInfo);
-      console.log(`Created ride: ${ride.ride_name} (ID: ${ride.ride_id})`);
+    const results = [];
 
-      // Generate ride sessions for this ride
-      const sessions = await generateRideSessions(
-        ride.ride_id,
-        getRandomNumber(5, 15)
-      );
+    for (let i = 1; i <= rideCount; i++) {
+      try {
+        const rideData = generateRideData(i - 1);
 
-      if (sessions.length > 0) {
-        // Create sessions and get their IDs
-        const createdSessions = await RideSession.bulkCreate(sessions);
-        console.log(
-          `Created ${createdSessions.length} sessions for ${ride.ride_name}`
-        );
+        // Create ride
+        const ride = await Ride.create(rideData);
 
-        // Generate metrics for each created session
-        for (const session of createdSessions) {
-          const metrics = generateRideMetrics(
-            session.session_id,
-            session.start_time,
-            session.end_time
-          );
-          await RideMetric.bulkCreate(metrics);
+        results.push({
+          rideId: ride.ride_id,
+          name: ride.ride_name,
+          type: ride.ride_type,
+          minHeight: ride.min_height_cm,
+          maxHeartRate: ride.max_heart_rate,
+          gForce: ride.g_force,
+          duration: ride.duration_seconds,
+        });
+
+        // Show progress every 20 rides
+        if (i % 20 === 0 || i === rideCount) {
+          const progress = ((i / rideCount) * 100).toFixed(1);
+          console.log(`✅ Created ${i}/${rideCount} rides (${progress}%)`);
         }
-        console.log(`Created metrics for ${createdSessions.length} sessions`);
+      } catch (error) {
+        console.error(`❌ Error creating ride ${i}:`, error);
+        // Continue with next ride instead of stopping
+        continue;
       }
     }
 
-    console.log("Successfully seeded rides with sessions and metrics!");
+    const endTime = new Date();
+    const duration = endTime.getTime() - startTime.getTime();
+
+    console.log("\n🎉 Ride seeding completed successfully!");
+    console.log(`📊 Summary:`);
+    console.log(`   Total rides created: ${results.length}/${rideCount}`);
+    console.log(`   Successful: ${results.length}`);
+    console.log(`   Failed: ${rideCount - results.length}`);
+    console.log(`⏱️  Total duration: ${(duration / 1000).toFixed(2)} seconds`);
+
+    // Show ride type distribution
+    const typeDistribution = {};
+    results.forEach((ride) => {
+      typeDistribution[ride.type] = (typeDistribution[ride.type] || 0) + 1;
+    });
+
+    console.log(`\n📈 Ride Type Distribution:`);
+    Object.entries(typeDistribution).forEach(([type, count]) => {
+      const percentage = ((count / results.length) * 100).toFixed(1);
+      console.log(`   ${type}: ${count} rides (${percentage}%)`);
+    });
+
+    // Show sample of created rides
+    if (results.length > 0) {
+      console.log(`\n🎢 Sample of created rides:`);
+      results.slice(0, 10).forEach((ride, index) => {
+        console.log(`   ${index + 1}. ${ride.name} (${ride.type})`);
+        console.log(
+          `      Min Height: ${ride.minHeight}cm | Max HR: ${ride.maxHeartRate}bpm | G-Force: ${ride.gForce}G | Duration: ${ride.duration}s`
+        );
+      });
+      if (results.length > 10) {
+        console.log(`   ... and ${results.length - 10} more rides`);
+      }
+    }
+
+    return results;
   } catch (error) {
-    console.error("Error seeding rides:", error);
+    console.error("❌ Error during ride seeding:", error);
     throw error;
   }
 };
@@ -206,43 +287,72 @@ const seedRides = async () => {
 // Function to clear all ride data
 const clearRideData = async () => {
   try {
-    console.log("Clearing all ride data...");
+    console.log("🗑️  Clearing all ride data...");
 
     // Delete in order due to foreign key constraints
-    await RideMetric.destroy({ where: {} });
-    await RideSession.destroy({ where: {} });
     await Ride.destroy({ where: {} });
 
-    console.log("All ride data cleared successfully!");
+    console.log("✅ All ride data cleared successfully!");
   } catch (error) {
-    console.error("Error clearing ride data:", error);
+    console.error("❌ Error clearing ride data:", error);
     throw error;
   }
 };
 
-// Export functions for use in other scripts
+// Function to show current ride count
+const showCurrentRideCount = async () => {
+  try {
+    const rideCount = await Ride.count();
+
+    console.log("�� Current Ride Count:");
+    console.log(`   Total Rides: ${rideCount}`);
+
+    return { rideCount };
+  } catch (error) {
+    console.error("❌ Error getting ride count:", error);
+    return { rideCount: 0 };
+  }
+};
+
+// Export functions
 module.exports = {
   seedRides,
   clearRideData,
+  showCurrentRideCount,
 };
 
 // If this script is run directly
 if (require.main === module) {
+  const rideCount = process.argv[2] ? parseInt(process.argv[2]) : 100;
+
   // Connect to database and run seeding
   const { sequelize } = require("../models");
 
   sequelize
     .authenticate()
-    .then(() => {
-      console.log("Database connected successfully.");
-      return seedRides();
+    .then(async () => {
+      console.log("✅ Database connected successfully.");
+
+      // Show current ride count first
+      await showCurrentRideCount();
+
+      // Ask for confirmation if clearing existing data
+      if (process.argv.includes("--clear")) {
+        console.log("\n⚠️  Clearing existing ride data first...");
+        await clearRideData();
+      }
+
+      // Run ride seeding
+      return seedRides(rideCount);
     })
-    .then(() => {
-      console.log("Ride seeding completed successfully!");
+    .then((results) => {
+      console.log("\n🎯 Ride seeding finished successfully!");
+      console.log(`🎢 Created ${results.length} amusement park rides`);
+      console.log(`📅 All rides are ready for today's operations!`);
       process.exit(0);
     })
     .catch((error) => {
-      console.error("Ride seeding failed:", error);
+      console.error("❌ Ride seeding failed:", error);
       process.exit(1);
     });
 }
