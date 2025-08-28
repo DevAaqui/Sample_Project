@@ -7,14 +7,6 @@ module.exports = (sequelize, DataTypes) => {
         primaryKey: true,
         autoIncrement: true,
       },
-      guest_id: {
-        type: DataTypes.BIGINT,
-        allowNull: false,
-        references: {
-          model: "guests",
-          key: "guest_id",
-        },
-      },
       device_type: {
         type: DataTypes.STRING(50),
         allowNull: true,
@@ -24,9 +16,52 @@ module.exports = (sequelize, DataTypes) => {
         allowNull: true,
         unique: true,
       },
+      device_brand: {
+        type: DataTypes.STRING(50),
+        allowNull: true,
+        comment: "Device manufacturer brand",
+      },
+      device_model: {
+        type: DataTypes.STRING(50),
+        allowNull: true,
+        comment: "Device model name",
+      },
       assigned_date: {
         type: DataTypes.DATE,
         allowNull: true,
+      },
+      is_active: {
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: true,
+        comment: "Whether the device is currently active and tracking",
+      },
+      device_status: {
+        type: DataTypes.ENUM(
+          "Available",
+          "In Use",
+          "Maintenance",
+          "Reserved",
+          "Testing"
+        ),
+        allowNull: false,
+        defaultValue: "Available",
+        comment: "Current status of the device",
+      },
+      battery_level: {
+        type: DataTypes.SMALLINT,
+        allowNull: true,
+        comment: "Battery level percentage (1-100)",
+      },
+      firmware_version: {
+        type: DataTypes.STRING(20),
+        allowNull: true,
+        comment: "Current firmware version",
+      },
+      last_sync: {
+        type: DataTypes.DATE,
+        allowNull: true,
+        comment: "Last time device synced data",
       },
       createdAt: {
         type: DataTypes.DATE,
@@ -44,23 +79,29 @@ module.exports = (sequelize, DataTypes) => {
       timestamps: true,
       indexes: [
         {
-          fields: ["guest_id"],
-        },
-        {
           unique: true,
           fields: ["device_serial_number"],
+        },
+        {
+          fields: ["is_active"],
+        },
+        {
+          fields: ["device_status"],
+        },
+        {
+          fields: ["device_type"],
+        },
+        {
+          fields: ["device_brand"],
         },
       ],
     }
   );
 
-  WearableDevice.associate = (models) => {
-    // WearableDevice belongs to a Guest
-    WearableDevice.belongsTo(models.Guest, {
-      foreignKey: "guest_id",
-      as: "guest",
-    });
-  };
+  // Remove guest association since devices are now completely independent
+  // WearableDevice.associate = (models) => {
+  //   // No more guest association
+  // };
 
   return WearableDevice;
 };
