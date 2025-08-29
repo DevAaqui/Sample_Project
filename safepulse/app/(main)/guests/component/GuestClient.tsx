@@ -47,6 +47,7 @@ export default function GuestsPage({
   initialGuests,
   initialPagination,
 }: GuestClientProps) {
+  console.log("initialGuests", initialGuests);
   const dispatch = useAppDispatch();
   const [sorting, setSorting] = useState<SortingState>([]);
 
@@ -120,26 +121,6 @@ export default function GuestsPage({
         <p className="text-gray-600">
           Monitor and manage guest activities and health metrics
         </p>
-        {/* Show current refresh status */}
-        {/* <div className="mt-2 text-sm text-gray-500">
-          {isRefreshing ? (
-            <span className="flex items-center">
-              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse mr-2"></div>
-              Auto-refresh: {refreshInterval}{" "}
-              {lastRefreshed && `(Next: ${lastRefreshed})`}
-            </span>
-          ) : isPaused ? (
-            <span className="flex items-center">
-              <div className="w-2 h-2 bg-yellow-500 rounded-full mr-2"></div>
-              Auto-refresh paused
-            </span>
-          ) : (
-            <span className="flex items-center">
-              <div className="w-2 h-2 bg-gray-400 rounded-full mr-2"></div>
-              Manual refresh
-            </span>
-          )}
-        </div> */}
       </div>
 
       {/* Error Display */}

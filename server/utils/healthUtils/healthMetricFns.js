@@ -401,6 +401,298 @@ const calculateSummaryStats = (processedGuests) => {
   };
 };
 
+// Helper function to calculate comprehensive health metrics
+const calculateComprehensiveHealthMetrics = (metrics) => {
+  if (!metrics || metrics.length === 0) {
+    return {
+      heartRate: { max: null, avg: null, latest: null },
+      bloodPressure: {
+        maxSystolic: null,
+        maxDiastolic: null,
+        avgSystolic: null,
+        avgDiastolic: null,
+        latest: null,
+      },
+      steps: { max: null, avg: null, latest: null, total: null },
+      caloriesBurned: { max: null, avg: null, latest: null, total: null },
+      stressLevel: { max: null, avg: null, latest: null },
+      activityLevel: { max: null, avg: null, latest: null },
+      totalMetrics: 0,
+    };
+  }
+
+  // Filter out null/undefined values for calculations
+  const validHeartRates = metrics
+    .filter((m) => m.heart_rate !== null && m.heart_rate !== undefined)
+    .map((m) => m.heart_rate);
+  const validSystolic = metrics
+    .filter(
+      (m) =>
+        m.blood_pressure_systolic !== null &&
+        m.blood_pressure_systolic !== undefined
+    )
+    .map((m) => m.blood_pressure_systolic);
+  const validDiastolic = metrics
+    .filter(
+      (m) =>
+        m.blood_pressure_diastolic !== null &&
+        m.blood_pressure_diastolic !== undefined
+    )
+    .map((m) => m.blood_pressure_diastolic);
+  const validSteps = metrics
+    .filter((m) => m.steps !== null && m.steps !== undefined)
+    .map((m) => m.steps);
+  const validCalories = metrics
+    .filter(
+      (m) => m.calories_burned !== null && m.calories_burned !== undefined
+    )
+    .map((m) => m.calories_burned);
+  const validStressLevels = metrics
+    .filter((m) => m.stress_level !== null && m.stress_level !== undefined)
+    .map((m) => m.stress_level);
+  const validActivityLevels = metrics
+    .filter((m) => m.activity_level !== null && m.activity_level !== undefined)
+    .map((m) => m.activity_level);
+
+  // Calculate averages
+  const avg = (arr) =>
+    arr.length > 0
+      ? Math.round(arr.reduce((sum, val) => sum + val, 0) / arr.length)
+      : null;
+  const max = (arr) => (arr.length > 0 ? Math.max(...arr) : null);
+  const min = (arr) => (arr.length > 0 ? Math.min(...arr) : null);
+
+  // Calculate stress level average (convert to numeric for calculation)
+  const stressLevelToNumeric = (level) => {
+    switch (level) {
+      case "Low":
+        return 1;
+      case "Medium":
+        return 2;
+      case "High":
+        return 3;
+      default:
+        return null;
+    }
+  };
+
+  const numericStressLevels = validStressLevels
+    .map(stressLevelToNumeric)
+    .filter((val) => val !== null);
+  const avgStressLevelNumeric = avg(numericStressLevels);
+  const avgStressLevel = avgStressLevelNumeric
+    ? avgStressLevelNumeric <= 1.5
+      ? "Low"
+      : avgStressLevelNumeric <= 2.5
+      ? "Medium"
+      : "High"
+    : null;
+
+  // Calculate activity level average
+  const activityLevelToNumeric = (level) => {
+    switch (level) {
+      case "Low":
+        return 1;
+      case "Medium":
+        return 2;
+      case "High":
+        return 3;
+      default:
+        return null;
+    }
+  };
+
+  const numericActivityLevels = validActivityLevels
+    .map(activityLevelToNumeric)
+    .filter((val) => val !== null);
+  const avgActivityLevelNumeric = avg(numericActivityLevels);
+  const avgActivityLevel = avgActivityLevelNumeric
+    ? avgActivityLevelNumeric <= 1.5
+      ? "Low"
+      : avgActivityLevelNumeric <= 2.5
+      ? "Medium"
+      : "High"
+    : null;
+
+  return {
+    heartRate: {
+      max: max(validHeartRates),
+      avg: avg(validHeartRates),
+      latest: metrics[0]?.heart_rate || null,
+    },
+    bloodPressure: {
+      maxSystolic: max(validSystolic),
+      maxDiastolic: max(validDiastolic),
+      avgSystolic: avg(validSystolic),
+      avgDiastolic: avg(validDiastolic),
+      latest:
+        metrics[0]?.blood_pressure_systolic &&
+        metrics[0]?.blood_pressure_diastolic
+          ? `${metrics[0].blood_pressure_systolic}/${metrics[0].blood_pressure_diastolic}`
+          : null,
+    },
+    steps: {
+      max: max(validSteps),
+      avg: avg(validSteps),
+      latest: metrics[0]?.steps || null,
+      total: validSteps.reduce((sum, val) => sum + val, 0),
+    },
+    caloriesBurned: {
+      max: max(validCalories),
+      avg: avg(validCalories),
+      latest: metrics[0]?.calories_burned || null,
+      total: validCalories.reduce((sum, val) => sum + val, 0),
+    },
+    stressLevel: {
+      max:
+        validStressLevels.length > 0
+          ? validStressLevels.reduce((max, current) =>
+              stressLevelToNumeric(current) > stressLevelToNumeric(max)
+                ? current
+                : max
+            )
+          : null,
+      avg: avgStressLevel,
+      latest: metrics[0]?.stress_level || null,
+    },
+    activityLevel: {
+      max:
+        validActivityLevels.length > 0
+          ? validActivityLevels.reduce((max, current) =>
+              activityLevelToNumeric(current) > activityLevelToNumeric(max)
+                ? current
+                : max
+            )
+          : null,
+      avg: avgActivityLevel,
+      latest: metrics[0]?.activity_level || null,
+    },
+    totalMetrics: metrics.length,
+  };
+};
+
+// Helper function to calculate comprehensive ride metrics
+const calculateComprehensiveRideMetrics = (rideSessions) => {
+  if (!rideSessions || rideSessions.length === 0) {
+    return {
+      heartRate: { max: null, avg: null, preRide: null, postRide: null },
+      caloriesBurned: { max: null, avg: null, total: null },
+      totalSessions: 0,
+      totalDuration: 0,
+    };
+  }
+
+  // Filter out null/undefined values
+  const validPreRideHR = rideSessions
+    .filter(
+      (s) =>
+        s.pre_ride_heart_rate !== null && s.pre_ride_heart_rate !== undefined
+    )
+    .map((s) => s.pre_ride_heart_rate);
+  const validPostRideHR = rideSessions
+    .filter(
+      (s) =>
+        s.post_ride_heart_rate !== null && s.post_ride_heart_rate !== undefined
+    )
+    .map((s) => s.post_ride_heart_rate);
+  const validMaxHR = rideSessions
+    .filter((s) => s.max_heart_rate !== null && s.max_heart_rate !== undefined)
+    .map((s) => s.max_heart_rate);
+  const validAvgHR = rideSessions
+    .filter((s) => s.avg_heart_rate !== null && s.avg_heart_rate !== undefined)
+    .map((s) => s.avg_heart_rate);
+  const validCalories = rideSessions
+    .filter(
+      (s) => s.calories_burned !== null && s.calories_burned !== undefined
+    )
+    .map((s) => s.calories_burned);
+
+  // Calculate averages
+  const avg = (arr) =>
+    arr.length > 0
+      ? Math.round(arr.reduce((sum, val) => sum + val, 0) / arr.length)
+      : null;
+  const max = (arr) => (arr.length > 0 ? Math.max(...arr) : null);
+
+  // Calculate total duration
+  const totalDuration = rideSessions.reduce((total, session) => {
+    if (session.start_time && session.end_time) {
+      return (
+        total + (new Date(session.end_time) - new Date(session.start_time))
+      );
+    }
+    return total;
+  }, 0);
+
+  return {
+    heartRate: {
+      max: max(validMaxHR),
+      avg: avg(validAvgHR),
+      preRide: avg(validPreRideHR),
+      postRide: avg(validPostRideHR),
+    },
+    caloriesBurned: {
+      max: max(validCalories),
+      avg: avg(validCalories),
+      total: validCalories.reduce((sum, val) => sum + val, 0),
+    },
+    totalSessions: rideSessions.length,
+    totalDuration: Math.floor(totalDuration / (1000 * 60)), // Convert to minutes
+  };
+};
+
+// Enhanced health score calculation using comprehensive metrics
+const calculateEnhancedHealthScore = (guest, healthMetrics, rideMetrics) => {
+  let score = 100; // Start with perfect score
+
+  // Heart rate analysis
+  if (healthMetrics.heartRate.avg) {
+    const hr = healthMetrics.heartRate.avg;
+    if (hr < guest.safe_hr_min || hr > guest.safe_hr_max) {
+      score -= 20; // Significant penalty for unsafe heart rate
+    } else if (hr < guest.safe_hr_min + 10 || hr > guest.safe_hr_max - 10) {
+      score -= 10; // Minor penalty for borderline heart rate
+    }
+  }
+
+  // Blood pressure analysis
+  if (
+    healthMetrics.bloodPressure.avgSystolic &&
+    healthMetrics.bloodPressure.avgDiastolic
+  ) {
+    const systolic = healthMetrics.bloodPressure.avgSystolic;
+    const diastolic = healthMetrics.bloodPressure.avgDiastolic;
+
+    if (systolic > 140 || diastolic > 90) {
+      score -= 15; // Penalty for high blood pressure
+    } else if (systolic < 90 || diastolic < 60) {
+      score -= 10; // Penalty for low blood pressure
+    }
+  }
+
+  // Activity level analysis
+  if (healthMetrics.activityLevel.avg === "Low") {
+    score -= 15; // Penalty for low activity
+  } else if (healthMetrics.activityLevel.avg === "High") {
+    score += 10; // Bonus for high activity
+  }
+
+  // Stress level analysis
+  if (healthMetrics.stressLevel.avg === "High") {
+    score -= 15; // Penalty for high stress
+  } else if (healthMetrics.stressLevel.avg === "Low") {
+    score += 5; // Bonus for low stress
+  }
+
+  // Ride participation bonus
+  if (rideMetrics.totalSessions > 0) {
+    score += Math.min(rideMetrics.totalSessions * 2, 20); // Bonus up to 20 points for ride participation
+  }
+
+  // Ensure score stays within 0-100 range
+  return Math.max(0, Math.min(100, Math.round(score)));
+};
+
 module.exports = {
   calculateAge,
   calculateHealthScore,
@@ -412,4 +704,7 @@ module.exports = {
   getStressLevelColor,
   getHealthStatusColor,
   calculateSummaryStats,
+  calculateComprehensiveHealthMetrics,
+  calculateComprehensiveRideMetrics,
+  calculateEnhancedHealthScore,
 };

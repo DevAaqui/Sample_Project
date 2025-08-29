@@ -1,9 +1,11 @@
+require("dotenv").config();
 const {
   Guest,
   WearableDevice,
   GuestMetric,
   RideSession,
   Ride,
+  RideMetric,
 } = require("../models");
 const { Op } = require("sequelize");
 const {
@@ -17,6 +19,9 @@ const {
   getStressLevelColor,
   getHealthStatusColor,
   calculateSummaryStats,
+  calculateEnhancedHealthScore,
+  calculateComprehensiveHealthMetrics,
+  calculateComprehensiveRideMetrics,
 } = require("../utils/healthUtils/healthMetricFns");
 
 // Get all guests
@@ -320,7 +325,7 @@ const getLatestGuestsMetrics = async (req, res) => {
     // Get total count for pagination
     const totalCount = await Guest.count();
 
-    // Get all guests with their latest metrics and ride sessions
+    // Get all guests with their metrics, ride sessions, and wearable device
     const guests = await Guest.findAll({
       include: [
         {
@@ -330,12 +335,15 @@ const getLatestGuestsMetrics = async (req, res) => {
             "metric_id",
             "timestamp",
             "heart_rate",
-            "blood_pressure",
+            "blood_pressure_systolic",
+            "blood_pressure_diastolic",
             "steps",
             "calories_burned",
+            "stress_level",
+            "activity_level",
           ],
           order: [["timestamp", "DESC"]],
-          limit: 1, // Get only the latest metric
+          // Remove limit to get all metrics for calculations
         },
         {
           model: RideSession,
@@ -346,15 +354,43 @@ const getLatestGuestsMetrics = async (req, res) => {
             "end_time",
             "calories_burned",
             "ride_id",
+            "pre_ride_heart_rate",
+            "post_ride_heart_rate",
+            // Remove max_heart_rate and avg_heart_rate as they don't exist in RideSession
           ],
           order: [["start_time", "DESC"]],
-          limit: 1, // Get only the latest ride session
+          // Remove limit to get all ride sessions for calculations
           include: [
             {
               model: Ride,
               as: "ride",
               attributes: ["ride_name"],
             },
+            {
+              model: RideMetric,
+              as: "rideMetrics",
+              attributes: [
+                "heart_rate",
+                "g_force",
+                "steps",
+                "calories_burned",
+                "blood_pressure_systolic",
+                "blood_pressure_diastolic",
+                "timestamp",
+              ],
+              order: [["timestamp", "ASC"]], // Order by timestamp to track progression
+            },
+          ],
+        },
+        {
+          model: WearableDevice,
+          as: "wearableDevice",
+          attributes: [
+            "device_id",
+            "device_type",
+            "device_serial_number",
+            "is_active",
+            "device_status",
           ],
         },
       ],
@@ -363,26 +399,36 @@ const getLatestGuestsMetrics = async (req, res) => {
       offset: offset,
     });
 
-    // Process each guest to calculate required data
+    // Process each guest to calculate comprehensive health metrics
     const processedGuests = guests.map((guest) => {
-      const latestMetric =
-        guest.metrics && guest.metrics.length > 0 ? guest.metrics[0] : null;
-      const latestRideSession =
-        guest.rideSessions && guest.rideSessions.length > 0
-          ? guest.rideSessions[0]
-          : null;
+      const metrics = guest.metrics || [];
+      const rideSessions = guest.rideSessions || [];
+      const wearableDevice = guest.wearableDevice;
+
+      // Calculate comprehensive health metrics from guest metrics
+      const healthMetrics = calculateComprehensiveHealthMetrics(metrics);
+
+      // Calculate comprehensive ride metrics
+      const rideMetrics = calculateComprehensiveRideMetrics(rideSessions);
 
       // Calculate age
       const age = calculateAge(guest.dob);
 
-      // Calculate health score
-      const healthScore = calculateHealthScore(guest, latestMetric);
+      // Calculate enhanced health score using comprehensive metrics
+      const healthScore = calculateEnhancedHealthScore(
+        guest,
+        healthMetrics,
+        rideMetrics
+      );
 
       // Get last ride information
-      const lastRide = latestRideSession?.ride?.ride_name || "No rides yet";
+      const lastRide =
+        rideSessions.length > 0
+          ? rideSessions[0]?.ride?.ride_name
+          : "No rides yet";
 
       // Calculate total time spent (sum of all ride sessions)
-      const totalTimeSpent = guest.rideSessions.reduce((total, session) => {
+      const totalTimeSpent = rideSessions.reduce((total, session) => {
         if (session.start_time && session.end_time) {
           const duration = Math.floor(
             (new Date(session.end_time) - new Date(session.start_time)) /
@@ -391,6 +437,11 @@ const getLatestGuestsMetrics = async (req, res) => {
           return total + duration;
         }
         return total;
+      }, 0);
+
+      // Calculate total calories burned from all ride sessions
+      const totalCaloriesBurned = rideSessions.reduce((total, session) => {
+        return total + (session?.calories_burned || 0);
       }, 0);
 
       return {
@@ -402,14 +453,36 @@ const getLatestGuestsMetrics = async (req, res) => {
         totalTimeSpent: formatTimeDuration(totalTimeSpent),
         email: guest.email,
         gender: guest.gender,
-        // Additional health data for debugging
-        latestHeartRate: latestMetric?.heart_rate || null,
-        latestBloodPressure: latestMetric?.blood_pressure || null,
-        latestSteps: latestMetric?.steps || null,
-        latestCalories: latestMetric?.calories_burned || null,
+
+        // Device information
+        deviceId: guest.device_id,
+        deviceType: wearableDevice?.device_type || "No device",
+        deviceStatus: wearableDevice?.device_status || "Unknown",
+        deviceActive: wearableDevice?.is_active || false,
+        deviceAssignedDate: guest.device_assigned_date,
+
+        // Comprehensive Health Metrics
+        healthMetrics: healthMetrics,
+
+        // Comprehensive Ride Metrics
+        rideMetrics: rideMetrics,
+
+        // Heart rate safety range
         safeHeartRateRange: `${guest.safe_hr_min || 60}-${
           guest.safe_hr_max || 100
         }`,
+
+        // Ride session summary
+        totalRideSessions: rideSessions.length,
+        totalCaloriesBurned: totalCaloriesBurned,
+
+        // Additional guest data
+        weight: guest.weight_kg,
+        height: guest.height_cm,
+        preferredUnits: guest.preferred_units,
+        knownConditions: guest.known_conditions,
+        allergies: guest.allergies,
+        baselineHeartRate: guest.baseline_heart_rate,
       };
     });
 

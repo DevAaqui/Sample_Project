@@ -1,8 +1,9 @@
+require("dotenv").config({ path: __dirname + "/.env" });
+console.log("DB_USER from env:", process.env.DB_USER);
 const express = require("express");
 const cors = require("cors");
 const helmet = require("helmet");
 const rateLimit = require("express-rate-limit");
-require("dotenv").config();
 
 const db = require("./models");
 
