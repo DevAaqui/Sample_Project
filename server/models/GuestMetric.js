@@ -15,6 +15,14 @@ module.exports = (sequelize, DataTypes) => {
           key: "guest_id",
         },
       },
+      device_id: {
+        type: DataTypes.BIGINT,
+        allowNull: false,
+        references: {
+          model: "wearable_devices",
+          key: "device_id",
+        },
+      },
       timestamp: {
         type: DataTypes.DATE,
         allowNull: false,
