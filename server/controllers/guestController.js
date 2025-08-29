@@ -513,15 +513,26 @@ const getLatestGuestsMetrics = async (req, res) => {
 
 const getLatestHealthMetrics = async (req, res) => {
   try {
+    console.log(" API Call Started - getLatestHealthMetrics");
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 100;
     const offset = (page - 1) * limit;
+
+    console.log(
+      "📊 Pagination - Page:",
+      page,
+      "Limit:",
+      limit,
+      "Offset:",
+      offset
+    );
 
     const totalCount = await Guest.count();
     const totalPages = Math.ceil(totalCount / limit);
     const hasNextPage = page < totalPages;
     const hasPrevPage = page > 1;
 
+    console.log("🔍 Fetching guests with associations...");
     const guests = await Guest.findAll({
       include: [
         {
@@ -531,12 +542,61 @@ const getLatestHealthMetrics = async (req, res) => {
             "metric_id",
             "timestamp",
             "heart_rate",
-            "blood_pressure",
+            "blood_pressure_systolic",
+            "blood_pressure_diastolic",
             "steps",
             "calories_burned",
+            "stress_level",
+            "activity_level",
           ],
           order: [["timestamp", "DESC"]],
-          limit: 1, // Get only the latest metric
+          // Remove limit to get all metrics for calculations
+        },
+        {
+          model: RideSession,
+          as: "rideSessions",
+          attributes: [
+            "session_id",
+            "start_time",
+            "end_time",
+            "calories_burned",
+            "ride_id",
+            "pre_ride_heart_rate",
+            "post_ride_heart_rate",
+          ],
+          order: [["start_time", "DESC"]],
+          include: [
+            {
+              model: Ride,
+              as: "ride",
+              attributes: ["ride_name"],
+            },
+            {
+              model: RideMetric,
+              as: "rideMetrics",
+              attributes: [
+                "heart_rate",
+                "g_force",
+                "steps",
+                "calories_burned",
+                "blood_pressure_systolic",
+                "blood_pressure_diastolic",
+                "timestamp",
+              ],
+              order: [["timestamp", "ASC"]], // Order by timestamp to track progression
+            },
+          ],
+        },
+        {
+          model: WearableDevice,
+          as: "wearableDevice",
+          attributes: [
+            "device_id",
+            "device_type",
+            "device_serial_number",
+            "is_active",
+            "device_status",
+          ],
         },
       ],
       order: [["createdAt", "DESC"]],
@@ -544,30 +604,66 @@ const getLatestHealthMetrics = async (req, res) => {
       offset: offset,
     });
 
+    console.log("✅ Guests fetched successfully. Count:", guests.length);
+
     // Process guests to include calculated health data
-    const processedGuests = guests.map((guest) => {
-      const latestMetric =
-        guest.metrics && guest.metrics.length > 0 ? guest.metrics[0] : null;
+    const processedGuests = guests.map((guest, index) => {
+      console.log(
+        `🔍 Processing guest ${index + 1}: ${guest.first_name} ${
+          guest.last_name
+        }`
+      );
+
+      const metrics = guest.metrics || [];
+      const rideSessions = guest.rideSessions || [];
+      const wearableDevice = guest.wearableDevice;
+
+      console.log(`   📊 Metrics count: ${metrics.length}`);
+      console.log(`   🎢 Ride sessions count: ${rideSessions.length}`);
+      console.log(`   Device: ${wearableDevice ? "Found" : "Not found"}`);
+
+      // Calculate comprehensive health metrics from guest metrics
+      const healthMetrics = calculateComprehensiveHealthMetrics(metrics);
+      console.log(
+        `   ❤️ Health metrics calculated:`,
+        JSON.stringify(healthMetrics, null, 2)
+      );
+
+      // Calculate comprehensive ride metrics
+      const rideMetrics = calculateComprehensiveRideMetrics(rideSessions);
+      console.log(
+        `   🎢 Ride metrics calculated:`,
+        JSON.stringify(rideMetrics, null, 2)
+      );
 
       // Calculate age
       const age = calculateAge(guest.dob);
 
-      // Calculate health score based on metrics
-      const healthScore = calculateHealthScore(guest, latestMetric);
+      // Calculate enhanced health score using comprehensive metrics
+      const healthScore = calculateEnhancedHealthScore(
+        guest,
+        healthMetrics,
+        rideMetrics
+      );
 
-      // Determine stress level based on heart rate and other factors
-      const stressLevel = calculateStressLevel(latestMetric);
+      // Determine stress level based on comprehensive metrics
+      const stressLevel = calculateStressLevel(healthMetrics);
 
       // Determine overall health status
-      const healthStatus = determineHealthStatus(healthScore, latestMetric);
+      const healthStatus = determineHealthStatus(healthScore, healthMetrics);
 
       // Calculate temperature (simulated based on health score and stress)
       const temperature = calculateTemperature(healthScore, stressLevel);
 
-      // Format blood pressure
-      const bloodPressure = latestMetric?.blood_pressure || "N/A";
+      // Format blood pressure from latest metric
+      const latestMetric = metrics.length > 0 ? metrics[0] : null;
+      const bloodPressure =
+        latestMetric?.blood_pressure_systolic &&
+        latestMetric?.blood_pressure_diastolic
+          ? `${latestMetric.blood_pressure_systolic}/${latestMetric.blood_pressure_diastolic}`
+          : "N/A";
 
-      // Format heart rate with color coding
+      // Format heart rate with color coding from latest metric
       const heartRate = latestMetric?.heart_rate || 0;
       const heartRateColor = getHeartRateColor(heartRate);
 
@@ -592,10 +688,44 @@ const getLatestHealthMetrics = async (req, res) => {
           color: getHealthStatusColor(healthStatus),
         },
         lastCheck: latestMetric?.createdAt || guest.createdAt,
+
+        // Comprehensive Health Metrics
+        healthMetrics: healthMetrics,
+
+        // Comprehensive Ride Metrics
+        rideMetrics: rideMetrics,
+
+        // Device information
+        deviceId: guest.device_id,
+        deviceType: wearableDevice?.device_type || "No device",
+        deviceStatus: wearableDevice?.device_status || "Unknown",
+        deviceActive: wearableDevice?.is_active || false,
+
+        // Heart rate safety range
+        safeHeartRateRange: `${guest.safe_hr_min || 60}-${
+          guest.safe_hr_max || 100
+        }`,
+
+        // Ride session summary
+        totalRideSessions: rideSessions.length,
+        totalCaloriesBurned: rideSessions.reduce((total, session) => {
+          return total + (session?.calories_burned || 0);
+        }, 0),
+
         // Include raw metric data for additional processing
         rawMetrics: latestMetric,
+
+        // Additional guest data
+        weight: guest.weight_kg,
+        height: guest.height_cm,
+        preferredUnits: guest.preferred_units,
+        knownConditions: guest.known_conditions,
+        allergies: guest.allergies,
+        baselineHeartRate: guest.baseline_heart_rate,
       };
     });
+
+    console.log("✅ Guests processing completed");
 
     // Calculate summary statistics
     const summaryStats = calculateSummaryStats(processedGuests);
@@ -615,7 +745,8 @@ const getLatestHealthMetrics = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Get latest health metrics error:", error);
+    console.error("❌ Get latest health metrics error:", error);
+    console.error("❌ Error Stack:", error.stack);
     res.status(500).json({ error: "Failed to get latest health metrics" });
   }
 };
