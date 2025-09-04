@@ -131,8 +131,6 @@ const formatTimeDuration = (minutes) => {
   }
 };
 
-// ... existing code ...
-
 // Helper function to calculate stress level based on health metrics
 const calculateStressLevel = (latestMetric) => {
   if (!latestMetric) return "Unknown";
@@ -140,9 +138,9 @@ const calculateStressLevel = (latestMetric) => {
   let stressScore = 0;
   let factors = 0;
 
-  // Factor 1: Heart Rate (40% weight)
-  if (latestMetric.heart_rate) {
-    const hr = latestMetric.heart_rate;
+  // Factor 1: Heart Rate (40% weight) - use latest heart rate
+  if (latestMetric.heartRate?.latest) {
+    const hr = latestMetric.heartRate.latest;
     if (hr < 60) {
       stressScore += 40; // Bradycardia - high stress
     } else if (hr >= 60 && hr <= 100) {
@@ -157,9 +155,9 @@ const calculateStressLevel = (latestMetric) => {
     factors++;
   }
 
-  // Factor 2: Blood Pressure (35% weight)
-  if (latestMetric.blood_pressure) {
-    const bp = latestMetric.blood_pressure;
+  // Factor 2: Blood Pressure (35% weight) - use latest blood pressure
+  if (latestMetric.bloodPressure?.latest) {
+    const bp = latestMetric.bloodPressure.latest;
     const [systolic, diastolic] = bp.split("/").map(Number);
 
     if (systolic && diastolic) {
@@ -178,9 +176,9 @@ const calculateStressLevel = (latestMetric) => {
     }
   }
 
-  // Factor 3: Activity Level (25% weight)
-  if (latestMetric.steps) {
-    const steps = latestMetric.steps;
+  // Factor 3: Activity Level (25% weight) - use latest steps
+  if (latestMetric.steps?.latest) {
+    const steps = latestMetric.steps.latest;
     if (steps >= 10000) {
       stressScore += 5; // High activity - low stress
     } else if (steps >= 7500) {

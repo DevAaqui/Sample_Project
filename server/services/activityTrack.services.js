@@ -1,4 +1,4 @@
-const { Guest, GuestMetric, RideSession } = require("../models");
+const { Guest, GuestMetric, RideSession, RideMetric } = require("../models");
 const { Op } = require("sequelize");
 
 /**
@@ -95,29 +95,54 @@ const getTotalCaloriesBurned = async () => {
 
     const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
-    // Get total calories using Sequelize aggregation
-    const totalCalories = await GuestMetric.findOne({
-      attributes: [
-        [
-          GuestMetric.sequelize.fn(
-            "SUM",
-            GuestMetric.sequelize.col("calories_burned")
-          ),
-          "totalCalories",
+    // Get total calories from both guest_metrics and ride_metrics
+    const [guestCalories, rideCalories] = await Promise.all([
+      // Guest metrics calories
+      GuestMetric.findOne({
+        attributes: [
+          [
+            GuestMetric.sequelize.fn(
+              "SUM",
+              GuestMetric.sequelize.col("calories_burned")
+            ),
+            "totalCalories",
+          ],
         ],
-      ],
-      where: {
-        timestamp: {
-          [Op.gte]: twentyFourHoursAgo,
+        where: {
+          timestamp: {
+            [Op.gte]: twentyFourHoursAgo,
+          },
+          calories_burned: {
+            [Op.ne]: null,
+          },
         },
-        calories_burned: {
-          [Op.ne]: null,
+      }),
+      // Ride metrics calories
+      RideMetric.findOne({
+        attributes: [
+          [
+            RideMetric.sequelize.fn(
+              "SUM",
+              RideMetric.sequelize.col("calories_burned")
+            ),
+            "totalCalories",
+          ],
+        ],
+        where: {
+          timestamp: {
+            [Op.gte]: twentyFourHoursAgo,
+          },
+          calories_burned: {
+            [Op.ne]: null,
+          },
         },
-      },
-    });
+      }),
+    ]);
 
-    const currentCalories =
-      parseInt(totalCalories?.dataValues?.totalCalories) || 0;
+    // Calculate combined total calories
+    const totalCaloriesBurned =
+      (parseInt(guestCalories?.dataValues?.totalCalories) || 0) +
+      (parseInt(rideCalories?.dataValues?.totalCalories) || 0);
 
     // Calculate percentage change from yesterday
     const yesterday = new Date(Date.now() - 48 * 60 * 60 * 1000);
@@ -148,14 +173,15 @@ const getTotalCaloriesBurned = async () => {
       parseInt(yesterdayCalories?.dataValues?.totalCalories) || 0;
     const percentageChange =
       yesterdayTotal > 0
-        ? (((currentCalories - yesterdayTotal) / yesterdayTotal) * 100).toFixed(
-            0
-          )
+        ? (
+            ((totalCaloriesBurned - yesterdayTotal) / yesterdayTotal) *
+            100
+          ).toFixed(0)
         : 0;
 
     return {
       title: "Total Calories Burned",
-      current: currentCalories,
+      current: totalCaloriesBurned,
       percentageChange: percentageChange,
       trend: percentageChange >= 0 ? "positive" : "negative",
     };
@@ -576,12 +602,10 @@ const getPeakActivityHours = async () => {
  */
 const getEnhancedActivityDashboard = async () => {
   try {
-    const [activityDistribution, peakHours] = await Promise.all(
-      [
-        getActivityDistribution(),
-        getPeakActivityHours(),
-      ]
-    );
+    const [activityDistribution, peakHours] = await Promise.all([
+      getActivityDistribution(),
+      getPeakActivityHours(),
+    ]);
 
     return {
       activityDistribution,
