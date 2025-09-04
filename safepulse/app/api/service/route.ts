@@ -2,8 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(req: NextRequest) {
   try {
+    // Use environment variable with fallback
     const apiPath =
       process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+
     if (!apiPath) {
       return NextResponse.json(
         { error: "No valid API path configured" },
@@ -70,7 +72,13 @@ export async function GET(req: NextRequest) {
     }
 
     const data = await response.json();
-    return NextResponse.json(data);
+    return NextResponse.json(data, {
+      headers: {
+        "Cache-Control": "no-cache, no-store, must-revalidate",
+        Pragma: "no-cache",
+        Expires: "0",
+      },
+    });
   } catch (error) {
     console.error("Error in service GET:", error);
     return NextResponse.json(
