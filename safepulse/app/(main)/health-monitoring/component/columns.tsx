@@ -1,5 +1,11 @@
 import { createColumnHelper } from "@tanstack/react-table";
-import { getStatusColor, getHeartRateColor, getStressLevelColor } from "./commonHealthFunc";
+import {
+  getStatusColor,
+  getHeartRateColor,
+  getStressLevelColor,
+} from "./commonHealthFunc";
+import { Button } from "@heroui/react";
+import { ChatBubbleLeftRightIcon } from "@heroicons/react/24/outline";
 
 // Define the type for health data
 interface HealthData {
@@ -55,9 +61,7 @@ export const columns = [
           <div className="text-sm font-medium text-gray-900">
             {row.original.fullName}
           </div>
-          <div className="text-xs text-gray-500">
-            ID: {row.original.id}
-          </div>
+          <div className="text-xs text-gray-500">ID: {row.original.id}</div>
         </div>
       </div>
     ),
@@ -76,10 +80,15 @@ export const columns = [
       const heartRate = row.original.heartRate;
       return (
         <div className="flex items-center">
-          <span className={`text-sm font-medium ${getHeartRateColor(heartRate.value)}`}>
+          <span
+            className={`text-sm font-medium ${getHeartRateColor(heartRate.value)}`}
+          >
             {heartRate.value} {heartRate.unit}
           </span>
-          <div className="ml-2 w-3 h-3 rounded-full" style={{ backgroundColor: heartRate.color }}></div>
+          <div
+            className="ml-2 w-3 h-3 rounded-full"
+            style={{ backgroundColor: heartRate.color }}
+          ></div>
         </div>
       );
     },
@@ -96,10 +105,15 @@ export const columns = [
     header: "Temperature",
     cell: ({ row }) => {
       const temp = row.original.temperature;
-      const statusColor = temp.status === "Normal" ? "text-green-600" : 
-                         temp.status === "High" ? "text-red-600" : 
-                         temp.status === "Low" ? "text-blue-600" : "text-gray-600";
-      
+      const statusColor =
+        temp.status === "Normal"
+          ? "text-green-600"
+          : temp.status === "High"
+            ? "text-red-600"
+            : temp.status === "Low"
+              ? "text-blue-600"
+              : "text-gray-600";
+
       return (
         <div className="flex items-center">
           <span className={`text-sm font-medium ${statusColor}`}>
@@ -117,10 +131,15 @@ export const columns = [
       const stress = row.original.stressLevel;
       return (
         <div className="flex items-center">
-          <span className={`text-sm font-medium ${getStressLevelColor(stress.value)}`}>
+          <span
+            className={`text-sm font-medium ${getStressLevelColor(stress.value)}`}
+          >
             {stress.value}
           </span>
-          <div className="ml-2 w-3 h-3 rounded-full" style={{ backgroundColor: stress.color }}></div>
+          <div
+            className="ml-2 w-3 h-3 rounded-full"
+            style={{ backgroundColor: stress.color }}
+          ></div>
         </div>
       );
     },
@@ -131,7 +150,9 @@ export const columns = [
     cell: ({ row }) => {
       const status = row.original.healthStatus;
       return (
-        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(status.value)}`}>
+        <span
+          className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(status.value)}`}
+        >
           {status.value}
         </span>
       );
@@ -143,10 +164,12 @@ export const columns = [
     cell: ({ getValue }) => {
       const date = new Date(getValue());
       if (isNaN(date.getTime())) return "Invalid Date";
-      
+
       const now = new Date();
-      const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
-      
+      const diffInHours = Math.floor(
+        (now.getTime() - date.getTime()) / (1000 * 60 * 60)
+      );
+
       let timeDisplay = "";
       if (diffInHours < 1) {
         timeDisplay = "Just now";
@@ -156,12 +179,16 @@ export const columns = [
         const days = Math.floor(diffInHours / 24);
         timeDisplay = `${days}d ago`;
       }
-      
+
       return (
         <div className="text-sm">
           <div className="text-gray-900">{timeDisplay}</div>
           <div className="text-xs text-gray-500">
-            {date.toLocaleDateString()} {date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+            {date.toLocaleDateString()}{" "}
+            {date.toLocaleTimeString([], {
+              hour: "2-digit",
+              minute: "2-digit",
+            })}
           </div>
         </div>
       );
@@ -175,11 +202,61 @@ export const columns = [
       return (
         <div className="text-sm">
           <div className="text-gray-900">
-            <span className="font-medium">{metrics?.steps?.toLocaleString()}</span> steps
+            <span className="font-medium">
+              {metrics?.steps?.toLocaleString()}
+            </span>{" "}
+            steps
           </div>
           <div className="text-xs text-gray-500">
             {metrics?.calories_burned} cal burned
           </div>
+        </div>
+      );
+    },
+  }),
+
+  // New Send Message column
+  columnHelper.display({
+    id: "sendMessage",
+    header: "Actions",
+    cell: ({ row }) => {
+      const healthStatus = row.original.healthStatus.value;
+      const isHealthExcellent = healthStatus === "Excellent";
+
+      const handleSendMessage = () => {
+        // You can implement the message sending logic here
+        console.log(
+          `Sending alert to ${row.original.fullName} (ID: ${row.original.id}) - Health Status: ${healthStatus}`
+        );
+
+        // Example: Open a modal, navigate to message page, or trigger an API call
+        // You might want to add state management for this
+        alert(`Send health alert to ${row.original.fullName}?`);
+      };
+
+      // Only show the button if health status is not "Excellent"
+      if (isHealthExcellent) {
+        return (
+          <div className="flex items-center justify-center">
+            <span className="text-xs text-gray-400 italic">
+              No action needed
+            </span>
+          </div>
+        );
+      }
+
+      return (
+        <div className="flex items-center justify-center">
+          <Button
+            size="sm"
+            color="danger"
+            variant="light"
+            startContent={<ChatBubbleLeftRightIcon className="h-4 w-4" />}
+            onPress={handleSendMessage}
+            className="text-xs"
+          >
+            Send Alert
+          </Button>
         </div>
       );
     },
